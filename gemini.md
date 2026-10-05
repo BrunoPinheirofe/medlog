@@ -59,3 +59,4 @@ lib/
 - **Tipagem Forte e Models:** Sempre utilize classes com os métodos `toMap()` e `fromMap()` para transitar dados do SQLite.
 - **Evite Placeholders:** Sempre que possível, escreva as queries SQL (INSERT, SELECT, UPDATE, DELETE) reais em vez de deixar comentários para o humano fazer.
 - **Design Clean:** Utilize o Material 3 com grandes espaçamentos. Mantenha os formulários muito simples. Mostre avisos em VERMELHO EXTREMO e exija confirmação apenas se o usuário tentar duplicar uma dose do mesmo medicamento em menos de X horas.
+- **Responsividade:** SEMPRE que for definir tamanhos na interface (largura, altura, margens, preenchimentos ou fontes), utilize `MediaQuery` (ou extensões baseadas nele) para garantir que o layout se adapte automaticamente aos diferentes tamanhos de tela dos dispositivos dos usuários. Evite fixar tamanhos (hardcoded) em pixels.
