@@ -53,18 +53,21 @@ lib/
 ## 🚀 Como Rodar o Projeto
 
 ### Pré-requisitos
+
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) instalado (versão mais recente recomendada).
 - Um dispositivo físico ou emulador (Android/iOS) configurado.
 
 ### Passos
 
 1. Clone o repositório:
+
    ```bash
-   git clone <URL_DO_SEU_REPOSITORIO>
+   git clone https://github.com/BrunoPinheirofe/medlog
    cd medlog
    ```
 
 2. Instale as dependências:
+
    ```bash
    flutter pub get
    ```
@@ -76,4 +79,4 @@ lib/
 
 ---
 
-*Desenvolvido com Flutter 💙*
+_Desenvolvido com Flutter 💙_
