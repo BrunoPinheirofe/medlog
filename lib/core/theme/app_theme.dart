@@ -11,22 +11,9 @@ class AppTheme {
   /// Você pode facilmente trocar isso mudando o valor abaixo.
   static const FlexScheme _currentScheme = FlexScheme.indigo; // Ou FlexScheme.tokyoNight
 
-  /// Tema Claro
   static ThemeData get lightTheme {
     return FlexThemeData.light(
       scheme: _currentScheme,
-      surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-      blendLevel: 7,
-      subThemesData: const FlexSubThemesData(
-        blendOnLevel: 10,
-        blendOnColors: false,
-        useM2StyleDividerInM3: true,
-        alignedDropdown: true,
-        useInputDecoratorThemeInDialogs: true,
-      ),
-      visualDensity: FlexColorScheme.comfortablePlatformDensity,
-      useMaterial3: true,
-      swapLegacyOnMaterial3: true,
     );
   }
 
@@ -34,17 +21,6 @@ class AppTheme {
   static ThemeData get darkTheme {
     return FlexThemeData.dark(
       scheme: _currentScheme,
-      surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-      blendLevel: 13,
-      subThemesData: const FlexSubThemesData(
-        blendOnLevel: 20,
-        useM2StyleDividerInM3: true,
-        alignedDropdown: true,
-        useInputDecoratorThemeInDialogs: true,
-      ),
-      visualDensity: FlexColorScheme.comfortablePlatformDensity,
-      useMaterial3: true,
-      swapLegacyOnMaterial3: true,
     );
   }
 }
