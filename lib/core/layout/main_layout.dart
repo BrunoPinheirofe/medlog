@@ -34,7 +34,7 @@ class _MainLayoutState extends State<MainLayout> {
         centerTitle: true,
       ),
       body: _pages[_currentIndex],
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
@@ -43,7 +43,8 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        label: Text('Novo Medicamento'),
+        icon: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

@@ -108,6 +108,9 @@ class _CadastroMedicamentoView extends StatelessWidget {
   }
 
   Widget _buildTopProgressBar(BuildContext context, int etapaAtual) {
+    const animationDuration = Duration(milliseconds: 300);
+    const animationCurve = Curves.easeInOut;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
       color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
@@ -116,11 +119,13 @@ class _CadastroMedicamentoView extends StatelessWidget {
           Row(
             children: List.generate(_stepTitles.length * 2 - 1, (index) {
               if (index % 2 == 1) {
-                // Linha conectora
+                // Linha conectora animada
                 final stepIndex = index ~/ 2;
                 final isCompleted = etapaAtual > stepIndex;
                 return Expanded(
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: animationDuration,
+                    curve: animationCurve,
                     height: 4,
                     color: isCompleted 
                         ? Theme.of(context).colorScheme.primary 
@@ -128,7 +133,7 @@ class _CadastroMedicamentoView extends StatelessWidget {
                   ),
                 );
               } else {
-                // Ponto (dot)
+                // Ponto (dot) animado
                 final stepIndex = index ~/ 2;
                 final isActive = stepIndex == etapaAtual;
                 final isCompleted = stepIndex < etapaAtual;
@@ -136,16 +141,43 @@ class _CadastroMedicamentoView extends StatelessWidget {
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.outlineVariant;
                 
-                return Container(
+                Widget childWidget;
+                if (isCompleted) {
+                  childWidget = Icon(
+                    Icons.check,
+                    key: const ValueKey('check_icon'),
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  );
+                } else if (isActive) {
+                  childWidget = Center(
+                    key: const ValueKey('active_dot'),
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                } else {
+                  childWidget = const SizedBox.shrink(key: ValueKey('empty'));
+                }
+
+                return AnimatedContainer(
+                  duration: animationDuration,
+                  curve: animationCurve,
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
                   ),
-                  child: isCompleted
-                      ? Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.onPrimary)
-                      : (isActive ? Center(child: Container(width: 8, height: 8, decoration: BoxDecoration(color: Theme.of(context).colorScheme.onPrimary, shape: BoxShape.circle))) : null),
+                  child: AnimatedSwitcher(
+                    duration: animationDuration,
+                    child: childWidget,
+                  ),
                 );
               }
             }),
@@ -155,8 +187,9 @@ class _CadastroMedicamentoView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(_stepTitles.length, (index) {
               final isActive = index == etapaAtual;
-              return Text(
-                _stepTitles[index],
+              return AnimatedDefaultTextStyle(
+                duration: animationDuration,
+                curve: animationCurve,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
@@ -164,6 +197,7 @@ class _CadastroMedicamentoView extends StatelessWidget {
                       ? Theme.of(context).colorScheme.primary 
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+                child: Text(_stepTitles[index]),
               );
             }),
           ),
