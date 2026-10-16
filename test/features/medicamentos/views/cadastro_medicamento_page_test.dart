@@ -1,12 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:medlog/features/medicamentos/views/cadastro_medicamento_page.dart';
 
+import '../repositories/fake_repository.dart';
+
 void main() {
   testWidgets('Deve validar campos obrigatórios e permitir avançar somente com dados válidos',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: CadastroMedicamentoPage(),
+    // Salvar medicamento (botão fixo no rodapé). O fake trava o save
+    // para exercitar o estado de submissão sem depender de banco real.
+    final repository = FakeMedicamentoRepository()..travaNoSave = Completer<void>();
+    await tester.pumpWidget(MaterialApp(
+      home: CadastroMedicamentoPage(repository: repository),
     ));
 
     // Passo 0: Identificação
@@ -78,11 +85,11 @@ void main() {
     // Salvar medicamento (botão fixo no rodapé)
     final btnSalvar = find.text('SALVAR');
     await tester.tap(btnSalvar);
-    await tester.pump(); // Inicia o isSubmitting com indicador de progresso
+    await tester.pump(); // Estado de submissão com indicador de progresso
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    // Aguarda o término da simulação assíncrona
-    await tester.pump(const Duration(milliseconds: 700));
+    // Libera o save previsto no fake; isSuccess dispara snackbar e pop
+    repository.travaNoSave!.complete();
     await tester.pumpAndSettle();
   });
 

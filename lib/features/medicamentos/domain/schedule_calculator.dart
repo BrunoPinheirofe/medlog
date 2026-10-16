@@ -118,4 +118,10 @@ class ScheduleCalculator {
     final m = time.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
+
+  /// Interpreta uma string `HH:mm` em [TimeOfDay].
+  static TimeOfDay parse(String horario) {
+    final partes = horario.split(':');
+    return TimeOfDay(hour: int.parse(partes[0]), minute: int.parse(partes[1]));
+  }
 }

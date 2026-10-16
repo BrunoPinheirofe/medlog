@@ -4,13 +4,19 @@ import 'package:material_ui/material_ui.dart';
 
 import '../domain/schedule_calculator.dart';
 import '../models/medicamento.dart';
+import '../repositories/medicamento_repository.dart';
+import '../repositories/medicamento_repository_sqflite.dart';
 
 part 'cadastro_medicamento_event.dart';
 part 'cadastro_medicamento_state.dart';
 
 class CadastroMedicamentoBloc
     extends Bloc<CadastroMedicamentoEvent, CadastroMedicamentoState> {
-  CadastroMedicamentoBloc() : super(const CadastroMedicamentoState()) {
+  final MedicamentoRepository _repository;
+
+  CadastroMedicamentoBloc({MedicamentoRepository? repository})
+      : _repository = repository ?? MedicamentoRepositorySqflite(),
+        super(const CadastroMedicamentoState()) {
     on<NextStep>((event, emit) {
       if (!state.isEtapaAtualValida) {
         emit(state.copyWith(
@@ -174,8 +180,7 @@ class CadastroMedicamentoBloc
       emit(state.copyWith(isSubmitting: true, errorMessage: null));
 
       try {
-        // Simulação de persistência assíncrona
-        await Future.delayed(const Duration(milliseconds: 600));
+        await _repository.save(state.toMedicamento());
         emit(state.copyWith(isSubmitting: false, isSuccess: true));
       } catch (e) {
         emit(state.copyWith(

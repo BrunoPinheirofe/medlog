@@ -2,18 +2,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../bloc/cadastro_medicamento_bloc.dart';
+import '../repositories/medicamento_repository.dart';
 import 'etapas/etapa_estoque_instrucoes.dart';
 import 'etapas/etapa_frequencia.dart';
 import 'etapas/etapa_horarios.dart';
 import 'etapas/etapa_nome_forma.dart';
 
 class CadastroMedicamentoPage extends StatelessWidget {
-  const CadastroMedicamentoPage({super.key});
+  const CadastroMedicamentoPage({super.key, this.repository});
+
+  /// Injetável para testes; em produção usa a implementação SQLite.
+  final MedicamentoRepository? repository;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CadastroMedicamentoBloc(),
+      create: (_) => CadastroMedicamentoBloc(repository: repository),
       child: const _CadastroMedicamentoView(),
     );
   }
