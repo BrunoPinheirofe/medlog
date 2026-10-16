@@ -11,9 +11,13 @@ class AppTheme {
   /// Você pode facilmente trocar isso mudando o valor abaixo.
   static const FlexScheme _currentScheme = FlexScheme.indigo; // Ou FlexScheme.tokyoNight
 
+  /// Fonte padrão do aplicativo ('ProductSans' ou 'PlusJakartaSans').
+  static const String fontFamily = 'ProductSans';
+
   static ThemeData get lightTheme {
     return FlexThemeData.light(
       scheme: _currentScheme,
+      fontFamily: fontFamily,
     );
   }
 
@@ -21,6 +25,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     return FlexThemeData.dark(
       scheme: _currentScheme,
+      fontFamily: fontFamily,
     );
   }
 }

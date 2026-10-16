@@ -24,8 +24,8 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const DosesPage(),
-      MedicamentosPage(key: ValueKey(_medicamentosRefreshKey)),
+      DosesPage(key: ValueKey('doses_$_medicamentosRefreshKey')),
+      MedicamentosPage(key: ValueKey('meds_$_medicamentosRefreshKey')),
       const CheckinPage(),
     ];
 

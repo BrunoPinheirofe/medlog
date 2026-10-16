@@ -51,7 +51,7 @@ void main() {
     expect(find.textContaining('Nenhum medicamento cadastrado'), findsOneWidget);
   });
 
-  testWidgets('Exclui o medicamento após confirmação e permite desfazer no SnackBar',
+  testWidgets('Exclui o medicamento pela tela de detalhes após confirmação e permite desfazer no SnackBar',
       (tester) async {
     final repository = FakeMedicamentoRepository()
       ..store[dipirona.id] = dipirona
@@ -60,8 +60,10 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: MedicamentosPage(repository: repository)));
     await tester.pumpAndSettle();
 
-    // Abre a confirmação de exclusão da Dipirona
-    await tester.tap(find.byTooltip('Remover').first);
+    // Abre a tela de detalhes da Dipirona e aciona a exclusão
+    await tester.tap(find.text('Dipirona'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Remover medicamento'));
     await tester.pumpAndSettle();
     expect(find.text('Remover Dipirona?'), findsOneWidget);
 

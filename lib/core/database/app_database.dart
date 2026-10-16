@@ -7,7 +7,7 @@ class AppDatabase {
   AppDatabase._();
 
   static const String databaseName = 'medlog.db';
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 2;
 
   static Future<Database>? _instance;
 
@@ -21,7 +21,7 @@ class AppDatabase {
       version: databaseVersion,
       onConfigure: configureForeignKeys,
       onCreate: (db, version) => createSchema(db),
-      onUpgrade: _onUpgrade,
+      onUpgrade: migrate,
     );
   }
 
@@ -62,10 +62,36 @@ class AppDatabase {
         UNIQUE (medicamento_id, hora)
       );
     ''');
+
+    await _createRegistrosDoseTable(db);
   }
 
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // shortcut: versão 1 sem migrations; ao subir a versão, adicione aqui um
-    // passo por versão (ALTER TABLE / CREATE TABLE) antes de lançar a release.
+  static Future<void> _createRegistrosDoseTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE registros_dose (
+        id TEXT PRIMARY KEY,
+        medicamento_id TEXT NOT NULL REFERENCES medicamentos(id) ON DELETE CASCADE,
+        data TEXT NOT NULL,
+        horario TEXT NOT NULL,
+        status TEXT NOT NULL,
+        silenciada INTEGER NOT NULL DEFAULT 0,
+        extra INTEGER NOT NULL DEFAULT 0,
+        registrado_em INTEGER NOT NULL
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_registros_dose_data ON registros_dose(data);',
+    );
+  }
+
+  /// Executa migrations incrementais de [oldVersion] até [newVersion].
+  static Future<void> migrate(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await _createRegistrosDoseTable(db);
+    }
   }
 }

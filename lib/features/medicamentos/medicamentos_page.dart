@@ -67,7 +67,6 @@ class _MedicamentosView extends StatelessWidget {
                 child: _MedicamentoCard(
                   medicamento: medicamento,
                   onTap: () => _abrirDetalhes(context, medicamento),
-                  onExcluir: () => _confirmarEExcluir(context, medicamento),
                 ),
               );
             },
@@ -91,13 +90,6 @@ class _MedicamentosView extends StatelessWidget {
       _executarExclusaoComDesfazer(context, excluido);
     } else {
       context.read<MedicamentosBloc>().add(LoadMedicamentos());
-    }
-  }
-
-  Future<void> _confirmarEExcluir(BuildContext context, Medicamento medicamento) async {
-    final bool confirmado = await confirmarExclusaoMedicamento(context, medicamento);
-    if (confirmado && context.mounted) {
-      _executarExclusaoComDesfazer(context, medicamento);
     }
   }
 
@@ -149,12 +141,10 @@ class _MedicamentoCard extends StatelessWidget {
   const _MedicamentoCard({
     required this.medicamento,
     required this.onTap,
-    required this.onExcluir,
   });
 
   final Medicamento medicamento;
   final VoidCallback onTap;
-  final VoidCallback onExcluir;
 
   @override
   Widget build(BuildContext context) {
@@ -180,11 +170,6 @@ class _MedicamentoCard extends StatelessWidget {
         ),
         title: Text(medicamento.nome, style: Theme.of(context).textTheme.titleMedium),
         subtitle: Text(detalhes, maxLines: 2, overflow: TextOverflow.ellipsis),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline),
-          tooltip: 'Remover',
-          onPressed: onExcluir,
-        ),
       ),
     );
   }
