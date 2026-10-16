@@ -1,6 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:medlog/features/medicamentos/bloc/cadastro_medicamento_bloc.dart';
 import 'package:medlog/features/medicamentos/models/medicamento.dart';
 
@@ -18,37 +18,76 @@ void main() {
 
     test('estado inicial deve ser correto', () {
       expect(bloc.state, const CadastroMedicamentoState());
+      expect(bloc.state.isNomeValido, isFalse);
+      expect(bloc.state.isEtapaAtualValida, isFalse);
     });
 
     blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
-      'deve avançar para a próxima etapa (NextStep) até o limite',
+      'não deve avançar etapa 0 se nome for inválido e deve sinalizar erro inline',
       build: () => CadastroMedicamentoBloc(),
-      act: (bloc) {
-        bloc.add(NextStep()); // vai para 1
-        bloc.add(NextStep()); // vai para 2
-        bloc.add(NextStep()); // vai para 3
-        bloc.add(NextStep()); // vai para 4
-        bloc.add(NextStep()); // tenta ir para 5 (ignora)
-      },
+      act: (bloc) => bloc.add(NextStep()),
       expect: () => [
-        const CadastroMedicamentoState(etapaAtual: 1),
-        const CadastroMedicamentoState(etapaAtual: 2),
-        const CadastroMedicamentoState(etapaAtual: 3),
-        const CadastroMedicamentoState(etapaAtual: 4),
+        const CadastroMedicamentoState(
+          etapaAtual: 0,
+          tentouAvancar: true,
+        ),
       ],
     );
 
     blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
-      'deve voltar para a etapa anterior (PreviousStep) até o limite',
-      build: () => CadastroMedicamentoBloc()..emit(const CadastroMedicamentoState(etapaAtual: 2)),
+      'deve avançar etapas quando campos obrigatórios estiverem válidos',
+      build: () => CadastroMedicamentoBloc(),
+      seed: () => const CadastroMedicamentoState(
+        nome: 'Paracetamol',
+        horarios: [TimeOfDay(hour: 8, minute: 0)],
+      ),
+      act: (bloc) {
+        bloc.add(NextStep()); // vai para 1
+        bloc.add(NextStep()); // vai para 2
+        bloc.add(NextStep()); // vai para 3
+        bloc.add(NextStep()); // já está na última, não passa de 3
+      },
+      expect: () => [
+        const CadastroMedicamentoState(
+          nome: 'Paracetamol',
+          horarios: [TimeOfDay(hour: 8, minute: 0)],
+          etapaAtual: 1,
+        ),
+        const CadastroMedicamentoState(
+          nome: 'Paracetamol',
+          horarios: [TimeOfDay(hour: 8, minute: 0)],
+          etapaAtual: 2,
+        ),
+        const CadastroMedicamentoState(
+          nome: 'Paracetamol',
+          horarios: [TimeOfDay(hour: 8, minute: 0)],
+          etapaAtual: 3,
+        ),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve voltar para a etapa anterior (PreviousStep) até o limite 0',
+      build: () => CadastroMedicamentoBloc(),
+      seed: () => const CadastroMedicamentoState(etapaAtual: 2),
       act: (bloc) {
         bloc.add(PreviousStep()); // vai para 1
         bloc.add(PreviousStep()); // vai para 0
-        bloc.add(PreviousStep()); // tenta ir para -1 (ignora)
+        bloc.add(PreviousStep()); // permanece em 0
       },
       expect: () => [
         const CadastroMedicamentoState(etapaAtual: 1),
         const CadastroMedicamentoState(etapaAtual: 0),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve navegar para etapa concluída via GoToStep',
+      build: () => CadastroMedicamentoBloc(),
+      seed: () => const CadastroMedicamentoState(etapaAtual: 3),
+      act: (bloc) => bloc.add(const GoToStep(1)),
+      expect: () => [
+        const CadastroMedicamentoState(etapaAtual: 1),
       ],
     );
 
@@ -62,6 +101,24 @@ void main() {
     );
 
     blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve atualizar dosagem (UpdateDosagem)',
+      build: () => CadastroMedicamentoBloc(),
+      act: (bloc) => bloc.add(const UpdateDosagem(500, 'mg')),
+      expect: () => [
+        const CadastroMedicamentoState(doseValor: 500, doseUnidade: 'mg'),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve atualizar cor temática (UpdateCor)',
+      build: () => CadastroMedicamentoBloc(),
+      act: (bloc) => bloc.add(const UpdateCor(0xFF2196F3)),
+      expect: () => [
+        const CadastroMedicamentoState(corHex: 0xFF2196F3),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
       'deve atualizar a frequencia corretamente (UpdateFrequencia)',
       build: () => CadastroMedicamentoBloc(),
       act: (bloc) => bloc.add(const UpdateFrequencia(Frequencia.intervaloHoras, intervaloHoras: 8)),
@@ -71,11 +128,95 @@ void main() {
     );
 
     blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve atualizar duração do tratamento (UpdateTratamentoDuracao)',
+      build: () => CadastroMedicamentoBloc(),
+      act: (bloc) => bloc.add(const UpdateTratamentoDuracao(usoContinuo: false, duracaoDias: 7)),
+      expect: () => [
+        const CadastroMedicamentoState(usoContinuo: false, duracaoDias: 7),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve gerar horários automaticamente a partir do inicial (GerarHorariosAutomaticos)',
+      build: () => CadastroMedicamentoBloc(),
+      seed: () => const CadastroMedicamentoState(frequencia: Frequencia.duasVezes),
+      act: (bloc) => bloc.add(const GerarHorariosAutomaticos(TimeOfDay(hour: 8, minute: 0))),
+      expect: () => [
+        const CadastroMedicamentoState(
+          frequencia: Frequencia.duasVezes,
+          horarios: [
+            TimeOfDay(hour: 8, minute: 0),
+            TimeOfDay(hour: 20, minute: 0),
+          ],
+        ),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'deve permitir editar e remover horários pontuais',
+      build: () => CadastroMedicamentoBloc(),
+      seed: () => const CadastroMedicamentoState(
+        horarios: [
+          TimeOfDay(hour: 8, minute: 0),
+          TimeOfDay(hour: 20, minute: 0),
+        ],
+      ),
+      act: (bloc) {
+        bloc.add(const EditarHorario(1, TimeOfDay(hour: 21, minute: 30)));
+        bloc.add(const RemoverHorario(0));
+      },
+      expect: () => [
+        const CadastroMedicamentoState(
+          horarios: [
+            TimeOfDay(hour: 8, minute: 0),
+            TimeOfDay(hour: 21, minute: 30),
+          ],
+        ),
+        const CadastroMedicamentoState(
+          horarios: [
+            TimeOfDay(hour: 21, minute: 30),
+          ],
+        ),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
       'deve atualizar o estoque e instrucoes (UpdateEstoqueInstrucoes)',
       build: () => CadastroMedicamentoBloc(),
-      act: (bloc) => bloc.add(const UpdateEstoqueInstrucoes(10, 'Tomar em jejum')),
+      act: (bloc) => bloc.add(const UpdateEstoqueInstrucoes(10, 'Tomar em jejum', estoqueMinimo: 3)),
       expect: () => [
-        const CadastroMedicamentoState(estoqueAtual: 10, instrucoes: 'Tomar em jejum'),
+        const CadastroMedicamentoState(
+          estoqueAtual: 10,
+          estoqueMinimo: 3,
+          instrucoes: 'Tomar em jejum',
+        ),
+      ],
+    );
+
+    blocTest<CadastroMedicamentoBloc, CadastroMedicamentoState>(
+      'SaveMedicamento deve ter sucesso quando dados obrigatórios forem válidos',
+      build: () => CadastroMedicamentoBloc(),
+      seed: () => const CadastroMedicamentoState(
+        nome: 'Amoxicilina',
+        horarios: [TimeOfDay(hour: 8, minute: 0)],
+        etapaAtual: 3,
+      ),
+      act: (bloc) => bloc.add(SaveMedicamento()),
+      wait: const Duration(milliseconds: 800),
+      expect: () => [
+        const CadastroMedicamentoState(
+          nome: 'Amoxicilina',
+          horarios: [TimeOfDay(hour: 8, minute: 0)],
+          etapaAtual: 3,
+          isSubmitting: true,
+        ),
+        const CadastroMedicamentoState(
+          nome: 'Amoxicilina',
+          horarios: [TimeOfDay(hour: 8, minute: 0)],
+          etapaAtual: 3,
+          isSubmitting: false,
+          isSuccess: true,
+        ),
       ],
     );
   });

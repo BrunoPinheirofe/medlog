@@ -3,49 +3,112 @@ import 'package:material_ui/material_ui.dart';
 import 'package:medlog/features/medicamentos/views/cadastro_medicamento_page.dart';
 
 void main() {
-  testWidgets('Deve exibir o formulário de cadastro e navegar entre as etapas', (WidgetTester tester) async {
+  testWidgets('Deve validar campos obrigatórios e permitir avançar somente com dados válidos',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: CadastroMedicamentoPage(),
     ));
 
     // Passo 0: Identificação
-    expect(find.text('Qual o nome do medicamento?'), findsOneWidget);
-    expect(find.text('Qual a forma do medicamento?'), findsOneWidget);
-    
-    // Inserir nome
-    await tester.enterText(find.byType(TextFormField), 'Paracetamol');
-    
-    // Avançar
+    expect(find.text('Identificação do Medicamento'), findsOneWidget);
+
+    // Tentar avançar com nome vazio -> Deve exibir mensagem de validação
     await tester.tap(find.text('PRÓXIMO'));
     await tester.pumpAndSettle();
+    expect(find.text('Informe um nome válido com ao menos 2 caracteres'), findsOneWidget);
 
-    // Passo 1: Frequência
-    expect(find.text('Com que frequência você toma este medicamento?'), findsOneWidget);
-    
-    // Escolher frequência (Uma vez ao dia)
-    await tester.tap(find.text('Uma vez por dia'));
+    // Digitar nome válido
+    final nomeInput = find.widgetWithText(TextFormField, 'Nome do medicamento *');
+    await tester.enterText(nomeInput, 'Dipirona');
     await tester.pumpAndSettle();
 
-    // Avançar
+    // Selecionar forma 'Gotas'
+    await tester.tap(find.text('Gotas'));
+    await tester.pumpAndSettle();
+
+    // Avançar para Passo 1: Frequência
     await tester.tap(find.text('PRÓXIMO'));
     await tester.pumpAndSettle();
+    expect(find.text('Frequência e Duração'), findsOneWidget);
 
-    // Passo 2: Horários
-    expect(find.text('Em quais horários você toma?'), findsOneWidget);
-    expect(find.text('Defina o horário da primeira dose, e nós calculamos o restante para você.'), findsOneWidget);
-    
-    // Avançar
+    // Selecionar "2 vezes ao dia"
+    await tester.tap(find.text('2 vezes ao dia'));
+    await tester.pumpAndSettle();
+
+    // Avançar para Passo 2: Horários
     await tester.tap(find.text('PRÓXIMO'));
     await tester.pumpAndSettle();
+    expect(find.text('Horários das Doses'), findsOneWidget);
 
-    // Passo 3: Detalhes
-    expect(find.text('Estoque e Instruções'), findsOneWidget);
+    // Tentar avançar sem horários -> deve bloquear e exibir alerta
+    await tester.tap(find.text('PRÓXIMO'));
+    await tester.pumpAndSettle();
+    expect(find.text('Defina pelo menos um horário de dose para continuar.'), findsOneWidget);
 
-    // Salvar
-    await tester.tap(find.text('SALVAR'));
+    // Usar atalho rápido para iniciar às 08:00
+    final chip08 = find.text('Iniciar às 08:00');
+    expect(chip08, findsOneWidget);
+    await tester.ensureVisible(chip08);
+    await tester.pumpAndSettle();
+    await tester.tap(chip08);
     await tester.pumpAndSettle();
 
-    // Como o save apenas emite isSuccess e o listener faz o pop e snackbar, não precisamos mockar tudo
-    // Apenas verificamos que ele não quebrou e a barra de progresso rodou
+    // Horários calculados (2 doses: 08:00 e 20:00)
+    expect(find.text('08:00'), findsOneWidget);
+    expect(find.text('20:00'), findsOneWidget);
+    expect(find.text('2 doses configuradas'), findsOneWidget);
+
+    // Avançar para Passo 3: Estoque, Instruções & Revisão
+    await tester.tap(find.text('PRÓXIMO'));
+    await tester.pumpAndSettle();
+    expect(find.text('Estoque, Instruções & Revisão'), findsOneWidget);
+
+    // Adicionar instrução rápida
+    final chipInstrucao = find.text('Após refeições');
+    await tester.ensureVisible(chipInstrucao);
+    await tester.pumpAndSettle();
+    await tester.tap(chipInstrucao);
+    await tester.pumpAndSettle();
+
+    // Rolar até o Card de Resumo da Prescrição
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(find.text('Resumo da Prescrição'), findsOneWidget);
+
+    // Salvar medicamento (botão fixo no rodapé)
+    final btnSalvar = find.text('SALVAR');
+    await tester.tap(btnSalvar);
+    await tester.pump(); // Inicia o isSubmitting com indicador de progresso
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    // Aguarda o término da simulação assíncrona
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Deve exibir diálogo de confirmação ao tentar fechar tela com dados preenchidos',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: CadastroMedicamentoPage(),
+    ));
+
+    // Digita um nome
+    final nomeInput = find.widgetWithText(TextFormField, 'Nome do medicamento *');
+    await tester.enterText(nomeInput, 'Amoxicilina');
+    await tester.pumpAndSettle();
+
+    // Clica no botão de fechar (X)
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+
+    // Verifica que o diálogo de descarte foi exibido
+    expect(find.text('Descartar alterações?'), findsOneWidget);
+    expect(find.text('Continuar editando'), findsOneWidget);
+    expect(find.text('Descartar'), findsOneWidget);
+
+    // Clica em 'Continuar editando' e permanece na página
+    await tester.tap(find.text('Continuar editando'));
+    await tester.pumpAndSettle();
+    expect(find.text('Identificação do Medicamento'), findsOneWidget);
   });
 }
