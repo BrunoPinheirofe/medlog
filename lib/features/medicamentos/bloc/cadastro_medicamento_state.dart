@@ -1,6 +1,7 @@
 part of 'cadastro_medicamento_bloc.dart';
 
 class CadastroMedicamentoState extends Equatable {
+  final String? id;
   final int etapaAtual;
   final String nome;
   final FormaMedicamento forma;
@@ -22,6 +23,7 @@ class CadastroMedicamentoState extends Equatable {
   final bool tentouAvancar;
 
   const CadastroMedicamentoState({
+    this.id,
     this.etapaAtual = 0,
     this.nome = '',
     this.forma = FormaMedicamento.comprimido,
@@ -42,6 +44,28 @@ class CadastroMedicamentoState extends Equatable {
     this.errorMessage,
     this.tentouAvancar = false,
   });
+
+  factory CadastroMedicamentoState.fromMedicamento(Medicamento m) {
+    return CadastroMedicamentoState(
+      id: m.id,
+      nome: m.nome,
+      forma: m.forma,
+      doseValor: m.doseValor,
+      doseUnidade: m.doseUnidade ?? 'mg',
+      corHex: m.corHex,
+      usoContinuo: m.usoContinuo,
+      duracaoDias: m.duracaoDias,
+      frequencia: m.frequencia,
+      horarios: m.horarios,
+      intervaloHoras: m.intervaloHoras,
+      estoqueAtual: m.estoqueAtual,
+      estoqueMinimo: m.estoqueMinimo,
+      instrucoes: m.instrucoes ?? '',
+      fotoUrl: m.fotoUrl,
+    );
+  }
+
+  bool get isEdicao => id != null;
 
   bool get isNomeValido => nome.trim().length >= 2;
 
@@ -90,7 +114,7 @@ class CadastroMedicamentoState extends Equatable {
 
   Medicamento toMedicamento({String? id}) {
     return Medicamento(
-      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: id ?? this.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       nome: nome.trim(),
       forma: forma,
       doseValor: doseValor,
@@ -109,6 +133,7 @@ class CadastroMedicamentoState extends Equatable {
   }
 
   CadastroMedicamentoState copyWith({
+    String? id,
     int? etapaAtual,
     String? nome,
     FormaMedicamento? forma,
@@ -130,6 +155,7 @@ class CadastroMedicamentoState extends Equatable {
     bool? tentouAvancar,
   }) {
     return CadastroMedicamentoState(
+      id: id ?? this.id,
       etapaAtual: etapaAtual ?? this.etapaAtual,
       nome: nome ?? this.nome,
       forma: forma ?? this.forma,
@@ -154,6 +180,7 @@ class CadastroMedicamentoState extends Equatable {
 
   @override
   List<Object?> get props => [
+        id,
         etapaAtual,
         nome,
         forma,

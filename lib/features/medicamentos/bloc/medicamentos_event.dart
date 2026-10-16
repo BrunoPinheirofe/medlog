@@ -17,3 +17,12 @@ class DeleteMedicamento extends MedicamentosEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class RestoreMedicamento extends MedicamentosEvent {
+  final Medicamento medicamento;
+
+  const RestoreMedicamento(this.medicamento);
+
+  @override
+  List<Object?> get props => [medicamento];
+}

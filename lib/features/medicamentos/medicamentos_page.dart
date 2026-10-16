@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'bloc/medicamentos_bloc.dart';
 import 'models/medicamento.dart';
 import 'repositories/medicamento_repository.dart';
-import 'views/cadastro_medicamento_page.dart';
+import 'views/detalhe_medicamento_page.dart';
 
 /// Listagem de medicamentos persistidos no SQLite local, via [MedicamentosBloc].
 class MedicamentosPage extends StatelessWidget {
@@ -17,32 +19,19 @@ class MedicamentosPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => MedicamentosBloc(repository: repository)..add(LoadMedicamentos()),
-      child: const _MedicamentosView(),
+      child: _MedicamentosView(repository: repository),
     );
   }
 }
 
 class _MedicamentosView extends StatelessWidget {
-  const _MedicamentosView();
+  const _MedicamentosView({this.repository});
+
+  final MedicamentoRepository? repository;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const CadastroMedicamentoPage(),
-              fullscreenDialog: true,
-            ),
-          );
-          // Recarrega a lista ao voltar do cadastro.
-          if (context.mounted) {
-            context.read<MedicamentosBloc>().add(LoadMedicamentos());
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
       body: BlocConsumer<MedicamentosBloc, MedicamentosState>(
         listener: (context, state) {
           if (state.errorMessage != null) {
@@ -68,9 +57,18 @@ class _MedicamentosView extends StatelessWidget {
             itemCount: state.medicamentos.length,
             itemBuilder: (context, index) {
               final medicamento = state.medicamentos[index];
-              return _MedicamentoCard(
-                medicamento: medicamento,
-                onExcluir: () => _confirmarExclusao(context, medicamento),
+              return Dismissible(
+                key: ValueKey(medicamento.id),
+                direction: DismissDirection.horizontal,
+                background: const _SwipeDeleteBackground(alignment: Alignment.centerLeft),
+                secondaryBackground: const _SwipeDeleteBackground(alignment: Alignment.centerRight),
+                confirmDismiss: (_) => confirmarExclusaoMedicamento(context, medicamento),
+                onDismissed: (_) => _executarExclusaoComDesfazer(context, medicamento),
+                child: _MedicamentoCard(
+                  medicamento: medicamento,
+                  onTap: () => _abrirDetalhes(context, medicamento),
+                  onExcluir: () => _confirmarEExcluir(context, medicamento),
+                ),
               );
             },
           );
@@ -79,37 +77,83 @@ class _MedicamentosView extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmarExclusao(BuildContext context, Medicamento medicamento) async {
-    final bool? confirmado = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Remover ${medicamento.nome}?'),
-        content: const Text(
-          'O medicamento e seus horários serão removidos. '
-          'Esta ação não pode ser desfeita.',
+  Future<void> _abrirDetalhes(BuildContext context, Medicamento medicamento) async {
+    final Medicamento? excluido = await Navigator.of(context).push<Medicamento>(
+      MaterialPageRoute(
+        builder: (_) => DetalheMedicamentoPage(
+          medicamento: medicamento,
+          repository: repository,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Remover'),
-          ),
-        ],
       ),
     );
-    if (confirmado == true && context.mounted) {
-      context.read<MedicamentosBloc>().add(DeleteMedicamento(medicamento.id));
+    if (!context.mounted) return;
+    if (excluido != null) {
+      _executarExclusaoComDesfazer(context, excluido);
+    } else {
+      context.read<MedicamentosBloc>().add(LoadMedicamentos());
     }
+  }
+
+  Future<void> _confirmarEExcluir(BuildContext context, Medicamento medicamento) async {
+    final bool confirmado = await confirmarExclusaoMedicamento(context, medicamento);
+    if (confirmado && context.mounted) {
+      _executarExclusaoComDesfazer(context, medicamento);
+    }
+  }
+
+  void _executarExclusaoComDesfazer(BuildContext context, Medicamento medicamento) {
+    final bloc = context.read<MedicamentosBloc>();
+    bloc.add(DeleteMedicamento(medicamento.id));
+
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 2),
+        content: Text('${medicamento.nome} foi removido'),
+        action: SnackBarAction(
+          label: 'Desfazer',
+          onPressed: () => bloc.add(RestoreMedicamento(medicamento)),
+        ),
+      ),
+    );
+    final timer = Timer(const Duration(seconds: 2), controller.close);
+    controller.closed.whenComplete(timer.cancel);
+  }
+}
+
+class _SwipeDeleteBackground extends StatelessWidget {
+  const _SwipeDeleteBackground({required this.alignment});
+
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      alignment: alignment,
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        Icons.delete_outline,
+        color: colorScheme.onErrorContainer,
+      ),
+    );
   }
 }
 
 class _MedicamentoCard extends StatelessWidget {
-  const _MedicamentoCard({required this.medicamento, required this.onExcluir});
+  const _MedicamentoCard({
+    required this.medicamento,
+    required this.onTap,
+    required this.onExcluir,
+  });
 
   final Medicamento medicamento;
+  final VoidCallback onTap;
   final VoidCallback onExcluir;
 
   @override
@@ -128,6 +172,7 @@ class _MedicamentoCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
+        onTap: onTap,
         leading: CircleAvatar(
           backgroundColor: cor.withValues(alpha: 0.12),
           foregroundColor: cor,

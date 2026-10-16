@@ -14,9 +14,15 @@ class CadastroMedicamentoBloc
     extends Bloc<CadastroMedicamentoEvent, CadastroMedicamentoState> {
   final MedicamentoRepository _repository;
 
-  CadastroMedicamentoBloc({MedicamentoRepository? repository})
-      : _repository = repository ?? MedicamentoRepositorySqflite(),
-        super(const CadastroMedicamentoState()) {
+  CadastroMedicamentoBloc({
+    MedicamentoRepository? repository,
+    Medicamento? medicamentoInicial,
+  })  : _repository = repository ?? MedicamentoRepositorySqflite(),
+        super(
+          medicamentoInicial != null
+              ? CadastroMedicamentoState.fromMedicamento(medicamentoInicial)
+              : const CadastroMedicamentoState(),
+        ) {
     on<NextStep>((event, emit) {
       if (!state.isEtapaAtualValida) {
         emit(state.copyWith(

@@ -264,5 +264,39 @@ void main() {
         ),
       ],
     );
+
+    test('inicializa em modo de edição e preserva o id original ao salvar', () async {
+      const original = Medicamento(
+        id: 'med-42',
+        nome: 'Losartana',
+        forma: FormaMedicamento.comprimido,
+        doseValor: 50,
+        doseUnidade: 'mg',
+        frequencia: Frequencia.umaVez,
+        horarios: [TimeOfDay(hour: 9, minute: 0)],
+        estoqueAtual: 20,
+        estoqueMinimo: 5,
+        instrucoes: 'Tomar pela manhã',
+      );
+      final repository = FakeMedicamentoRepository()..store[original.id] = original;
+      final editBloc = CadastroMedicamentoBloc(
+        repository: repository,
+        medicamentoInicial: original,
+      );
+
+      expect(editBloc.state.isEdicao, isTrue);
+      expect(editBloc.state.id, 'med-42');
+      expect(editBloc.state.nome, 'Losartana');
+
+      editBloc.add(const UpdateNomeForma('Losartana Potássica', FormaMedicamento.comprimido));
+      editBloc.add(SaveMedicamento());
+
+      await editBloc.stream.firstWhere((state) => state.isSuccess);
+
+      final salvo = await repository.getById('med-42');
+      expect(salvo, isNotNull);
+      expect(salvo!.nome, 'Losartana Potássica');
+      await editBloc.close();
+    });
   });
 }

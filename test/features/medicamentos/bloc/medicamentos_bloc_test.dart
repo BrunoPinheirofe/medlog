@@ -105,5 +105,25 @@ void main() {
         ),
       ],
     );
+
+    blocTest<MedicamentosBloc, MedicamentosState>(
+      'RestoreMedicamento salva novamente o medicamento e recarrega a lista',
+      build: () {
+        final repository = FakeMedicamentoRepository()
+          ..store[ibuprofeno.id] = ibuprofeno;
+        return MedicamentosBloc(repository: repository);
+      },
+      seed: () => const MedicamentosState(
+        status: MedicamentosStatus.success,
+        medicamentos: [ibuprofeno],
+      ),
+      act: (bloc) => bloc.add(const RestoreMedicamento(dipirona)),
+      expect: () => [
+        const MedicamentosState(
+          status: MedicamentosStatus.success,
+          medicamentos: [ibuprofeno, dipirona],
+        ),
+      ],
+    );
   });
 }

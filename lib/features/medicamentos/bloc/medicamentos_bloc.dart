@@ -45,6 +45,22 @@ class MedicamentosBloc extends Bloc<MedicamentosEvent, MedicamentosState> {
         ));
       }
     });
+
+    on<RestoreMedicamento>((event, emit) async {
+      try {
+        await _repository.save(event.medicamento);
+        final List<Medicamento> medicamentos = await _repository.getAll();
+        emit(state.copyWith(
+          status: MedicamentosStatus.success,
+          medicamentos: medicamentos,
+        ));
+      } catch (e) {
+        emit(state.copyWith(
+          status: MedicamentosStatus.failure,
+          errorMessage: 'Erro ao restaurar medicamento.',
+        ));
+      }
+    });
   }
 
   final MedicamentoRepository _repository;

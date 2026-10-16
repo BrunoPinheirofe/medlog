@@ -13,12 +13,7 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    DosesPage(), // Tela Inicial / Hoje (Doses do dia)
-    MedicamentosPage(), // Lista de Medicamentos
-    CheckinPage(), // Diário / Check-in
-  ];
+  int _medicamentosRefreshKey = 0;
 
   final List<String> _titles = const [
     'Hoje',
@@ -28,22 +23,33 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      const DosesPage(),
+      MedicamentosPage(key: ValueKey(_medicamentosRefreshKey)),
+      const CheckinPage(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
         centerTitle: true,
       ),
-      body: _pages[_currentIndex],
+      body: pages[_currentIndex],
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final salvo = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const CadastroMedicamentoPage(),
             ),
           );
+          if (salvo != null && mounted) {
+            setState(() {
+              _medicamentosRefreshKey++;
+            });
+          }
         },
-        label: Text('Novo Medicamento'),
+        label: const Text('Novo Medicamento'),
         icon: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(

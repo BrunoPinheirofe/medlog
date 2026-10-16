@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../bloc/cadastro_medicamento_bloc.dart';
+import '../models/medicamento.dart';
 import '../repositories/medicamento_repository.dart';
 import 'etapas/etapa_estoque_instrucoes.dart';
 import 'etapas/etapa_frequencia.dart';
@@ -9,15 +10,25 @@ import 'etapas/etapa_horarios.dart';
 import 'etapas/etapa_nome_forma.dart';
 
 class CadastroMedicamentoPage extends StatelessWidget {
-  const CadastroMedicamentoPage({super.key, this.repository});
+  const CadastroMedicamentoPage({
+    super.key,
+    this.repository,
+    this.medicamentoInicial,
+  });
 
   /// Injetável para testes; em produção usa a implementação SQLite.
   final MedicamentoRepository? repository;
 
+  /// Quando preenchido, abre o formulário em modo de edição.
+  final Medicamento? medicamentoInicial;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CadastroMedicamentoBloc(repository: repository),
+      create: (_) => CadastroMedicamentoBloc(
+        repository: repository,
+        medicamentoInicial: medicamentoInicial,
+      ),
       child: const _CadastroMedicamentoView(),
     );
   }
@@ -75,9 +86,15 @@ class _CadastroMedicamentoView extends StatelessWidget {
       listener: (context, state) {
         if (state.isSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Medicamento cadastrado com sucesso!')),
+            SnackBar(
+              content: Text(
+                state.isEdicao
+                    ? 'Medicamento atualizado com sucesso!'
+                    : 'Medicamento cadastrado com sucesso!',
+              ),
+            ),
           );
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(state.toMedicamento());
         } else if (state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -100,7 +117,7 @@ class _CadastroMedicamentoView extends StatelessWidget {
           },
           child: Scaffold(
             appBar: AppBar(
-              title: const Text('Novo Medicamento'),
+              title: Text(state.isEdicao ? 'Editar Medicamento' : 'Novo Medicamento'),
               leading: IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () async {
