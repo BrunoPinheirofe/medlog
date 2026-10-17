@@ -1,4 +1,7 @@
 # Miscellaneous
+.opencode/
+.specify/
+.agents/
 *.class
 *.log
 *.pyc
