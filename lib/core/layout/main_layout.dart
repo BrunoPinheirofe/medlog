@@ -32,7 +32,7 @@ class _MainLayoutState extends State<MainLayout> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: pages[_currentIndex],
       floatingActionButton: FloatingActionButton.extended(

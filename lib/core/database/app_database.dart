@@ -7,12 +7,21 @@ class AppDatabase {
   AppDatabase._();
 
   static const String databaseName = 'medlog.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   static Future<Database>? _instance;
 
-  /// Conexão única do app (aberta sob demanda).
-  static Future<Database> database() => _instance ??= _open();
+  /// Conexão única do app (aberta sob demanda), garantindo que migrations
+  /// pendentes rodem mesmo quando a instância foi preservada por Hot Reload.
+  static Future<Database> database() async {
+    final db = await (_instance ??= _open());
+    final currentVersion = await db.getVersion();
+    if (currentVersion < databaseVersion) {
+      await migrate(db, currentVersion, databaseVersion);
+      await db.setVersion(databaseVersion);
+    }
+    return db;
+  }
 
   static Future<Database> _open() async {
     final String path = p.join(await getDatabasesPath(), databaseName);
@@ -44,6 +53,7 @@ class AppDatabase {
         cor_hex INTEGER,
         uso_continuo INTEGER NOT NULL DEFAULT 1,
         duracao_dias INTEGER,
+        data_inicio TEXT,
         instrucoes TEXT,
         intervalo_horas INTEGER,
         estoque_atual INTEGER NOT NULL DEFAULT 0,
@@ -92,6 +102,16 @@ class AppDatabase {
   ) async {
     if (oldVersion < 2) {
       await _createRegistrosDoseTable(db);
+    }
+    if (oldVersion < 3) {
+      await db.execute(
+        'ALTER TABLE medicamentos ADD COLUMN data_inicio TEXT;',
+      );
+      await db.execute('''
+        UPDATE medicamentos
+        SET data_inicio = strftime('%Y-%m-%d', criado_em / 1000, 'unixepoch', 'localtime')
+        WHERE data_inicio IS NULL;
+      ''');
     }
   }
 }

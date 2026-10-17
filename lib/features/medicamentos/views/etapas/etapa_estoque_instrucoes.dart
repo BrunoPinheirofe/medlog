@@ -258,7 +258,12 @@ class _EtapaEstoqueInstrucoesState extends State<EtapaEstoqueInstrucoes> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.assignment_outlined, color: theme.colorScheme.primary),
+                        Icon(
+                          state.forma.icon,
+                          color: state.corHex != null
+                              ? Color(state.corHex!)
+                              : theme.colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Resumo da Prescrição',

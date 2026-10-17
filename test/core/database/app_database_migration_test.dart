@@ -6,7 +6,7 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  test('migra da versão 1 para a versão 2 preservando medicamentos e criando registros_dose',
+  test('migra da versão 1 para a versão 3 preservando medicamentos e adicionando registros_dose e data_inicio',
       () async {
     final db = await databaseFactory.openDatabase(
       inMemoryDatabasePath,
@@ -55,6 +55,16 @@ void main() {
     final medRows = await db.query('medicamentos', where: 'id = ?', whereArgs: ['med-1']);
     expect(medRows, hasLength(1));
     expect(medRows.first['nome'], 'Dipirona');
+    expect(medRows.first.containsKey('data_inicio'), isTrue);
+
+    await db.update(
+      'medicamentos',
+      {'data_inicio': '2026-10-16'},
+      where: 'id = ?',
+      whereArgs: ['med-1'],
+    );
+    final atualizado = await db.query('medicamentos', where: 'id = ?', whereArgs: ['med-1']);
+    expect(atualizado.first['data_inicio'], '2026-10-16');
 
     await db.insert('registros_dose', {
       'id': '2026-10-16_med-1_08:00',

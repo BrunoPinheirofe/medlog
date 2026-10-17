@@ -1,19 +1,34 @@
 import 'package:equatable/equatable.dart';
 import 'package:material_ui/material_ui.dart';
 
-enum FormaMedicamento { comprimido, gota, liquido, injetavel, outro }
+enum FormaMedicamento {
+  comprimido,
+  capsula,
+  gota,
+  liquido,
+  injetavel,
+  pomada,
+  spray,
+  outro,
+}
 
 extension FormaMedicamentoX on FormaMedicamento {
   String get label {
     switch (this) {
       case FormaMedicamento.comprimido:
         return 'Comprimido';
+      case FormaMedicamento.capsula:
+        return 'Cápsula';
       case FormaMedicamento.gota:
         return 'Gotas';
       case FormaMedicamento.liquido:
         return 'Líquido / Xarope';
       case FormaMedicamento.injetavel:
         return 'Injetável';
+      case FormaMedicamento.pomada:
+        return 'Pomada / Creme';
+      case FormaMedicamento.spray:
+        return 'Spray / Inalador';
       case FormaMedicamento.outro:
         return 'Outro';
     }
@@ -23,12 +38,18 @@ extension FormaMedicamentoX on FormaMedicamento {
     switch (this) {
       case FormaMedicamento.comprimido:
         return Icons.medication;
+      case FormaMedicamento.capsula:
+        return Icons.medication_liquid;
       case FormaMedicamento.gota:
         return Icons.water_drop_outlined;
       case FormaMedicamento.liquido:
         return Icons.local_drink_outlined;
       case FormaMedicamento.injetavel:
         return Icons.vaccines_outlined;
+      case FormaMedicamento.pomada:
+        return Icons.sanitizer_outlined;
+      case FormaMedicamento.spray:
+        return Icons.air;
       case FormaMedicamento.outro:
         return Icons.healing_outlined;
     }
@@ -94,6 +115,7 @@ class Medicamento extends Equatable {
   final int? corHex;
   final bool usoContinuo;
   final int? duracaoDias;
+  final DateTime? dataInicio;
   final String? instrucoes;
   final Frequencia frequencia;
   final List<TimeOfDay> horarios;
@@ -111,6 +133,7 @@ class Medicamento extends Equatable {
     this.corHex,
     this.usoContinuo = true,
     this.duracaoDias,
+    this.dataInicio,
     this.instrucoes,
     required this.frequencia,
     this.horarios = const [],
@@ -119,6 +142,19 @@ class Medicamento extends Equatable {
     this.estoqueMinimo = 5,
     this.fotoUrl,
   });
+
+  /// Verifica se o tratamento está ativo na [data] (ignorando horas/minutos).
+  bool estaAtivoNaData(DateTime data) {
+    if (dataInicio == null) return true;
+    final alvo = DateTime(data.year, data.month, data.day);
+    final inicio = DateTime(dataInicio!.year, dataInicio!.month, dataInicio!.day);
+    if (alvo.isBefore(inicio)) return false;
+    if (!usoContinuo && duracaoDias != null && duracaoDias! > 0) {
+      final fim = DateTime(inicio.year, inicio.month, inicio.day + duracaoDias! - 1);
+      if (alvo.isAfter(fim)) return false;
+    }
+    return true;
+  }
 
   String get descricaoDose {
     if (doseValor == null || doseValor == 0) {
@@ -142,6 +178,7 @@ class Medicamento extends Equatable {
     int? corHex,
     bool? usoContinuo,
     int? duracaoDias,
+    DateTime? dataInicio,
     String? instrucoes,
     Frequencia? frequencia,
     List<TimeOfDay>? horarios,
@@ -159,6 +196,7 @@ class Medicamento extends Equatable {
       corHex: corHex ?? this.corHex,
       usoContinuo: usoContinuo ?? this.usoContinuo,
       duracaoDias: duracaoDias ?? this.duracaoDias,
+      dataInicio: dataInicio ?? this.dataInicio,
       instrucoes: instrucoes ?? this.instrucoes,
       frequencia: frequencia ?? this.frequencia,
       horarios: horarios ?? this.horarios,
@@ -179,6 +217,7 @@ class Medicamento extends Equatable {
         corHex,
         usoContinuo,
         duracaoDias,
+        dataInicio,
         instrucoes,
         frequencia,
         horarios,

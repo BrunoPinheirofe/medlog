@@ -10,6 +10,7 @@ class CadastroMedicamentoState extends Equatable {
   final int? corHex;
   final bool usoContinuo;
   final int? duracaoDias;
+  final DateTime? dataInicio;
   final Frequencia frequencia;
   final List<TimeOfDay> horarios;
   final int? intervaloHoras;
@@ -32,6 +33,7 @@ class CadastroMedicamentoState extends Equatable {
     this.corHex,
     this.usoContinuo = true,
     this.duracaoDias,
+    this.dataInicio,
     this.frequencia = Frequencia.umaVez,
     this.horarios = const [],
     this.intervaloHoras,
@@ -55,6 +57,7 @@ class CadastroMedicamentoState extends Equatable {
       corHex: m.corHex,
       usoContinuo: m.usoContinuo,
       duracaoDias: m.duracaoDias,
+      dataInicio: m.dataInicio,
       frequencia: m.frequencia,
       horarios: m.horarios,
       intervaloHoras: m.intervaloHoras,
@@ -113,8 +116,10 @@ class CadastroMedicamentoState extends Equatable {
   }
 
   Medicamento toMedicamento({String? id}) {
+    final agora = DateTime.now();
+    final inicioPadrao = DateTime(agora.year, agora.month, agora.day);
     return Medicamento(
-      id: id ?? this.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: id ?? this.id ?? agora.millisecondsSinceEpoch.toString(),
       nome: nome.trim(),
       forma: forma,
       doseValor: doseValor,
@@ -122,6 +127,7 @@ class CadastroMedicamentoState extends Equatable {
       corHex: corHex,
       usoContinuo: usoContinuo,
       duracaoDias: duracaoDias,
+      dataInicio: dataInicio ?? inicioPadrao,
       instrucoes: instrucoes.trim().isEmpty ? null : instrucoes.trim(),
       frequencia: frequencia,
       horarios: horarios,
@@ -142,6 +148,7 @@ class CadastroMedicamentoState extends Equatable {
     int? corHex,
     bool? usoContinuo,
     int? duracaoDias,
+    DateTime? dataInicio,
     Frequencia? frequencia,
     List<TimeOfDay>? horarios,
     int? intervaloHoras,
@@ -164,6 +171,7 @@ class CadastroMedicamentoState extends Equatable {
       corHex: corHex ?? this.corHex,
       usoContinuo: usoContinuo ?? this.usoContinuo,
       duracaoDias: duracaoDias ?? this.duracaoDias,
+      dataInicio: dataInicio ?? this.dataInicio,
       frequencia: frequencia ?? this.frequencia,
       horarios: horarios ?? this.horarios,
       intervaloHoras: intervaloHoras ?? this.intervaloHoras,
@@ -189,6 +197,7 @@ class CadastroMedicamentoState extends Equatable {
         corHex,
         usoContinuo,
         duracaoDias,
+        dataInicio,
         frequencia,
         horarios,
         intervaloHoras,

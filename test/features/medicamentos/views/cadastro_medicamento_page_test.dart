@@ -29,9 +29,14 @@ void main() {
     await tester.enterText(nomeInput, 'Dipirona');
     await tester.pumpAndSettle();
 
-    // Selecionar forma 'Gotas'
+    // Inicialmente o prefixIcon é Icons.medication (Comprimido) + 1 no ChoiceChip
+    expect(find.byIcon(Icons.medication), findsNWidgets(2));
+    expect(find.byIcon(Icons.water_drop_outlined), findsOneWidget);
+
+    // Selecionar forma 'Gotas' -> o prefixIcon passa a ser Icons.water_drop_outlined
     await tester.tap(find.text('Gotas'));
     await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.water_drop_outlined), findsNWidgets(2));
 
     // Avançar para Passo 1: Frequência
     await tester.tap(find.text('PRÓXIMO'));

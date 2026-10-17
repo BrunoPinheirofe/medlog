@@ -23,6 +23,7 @@ void main() {
     int? corHex = 0xFF2196F3,
     bool usoContinuo = false,
     int? duracaoDias = 7,
+    DateTime? dataInicio,
     String? instrucoes = 'Tomar após as refeições',
     Frequencia frequencia = Frequencia.duasVezes,
     List<TimeOfDay> horarios = const [
@@ -34,6 +35,7 @@ void main() {
     int estoqueMinimo = 5,
     String? fotoUrl,
   }) {
+    final hoje = DateTime.now();
     return Medicamento(
       id: id,
       nome: nome,
@@ -43,6 +45,7 @@ void main() {
       corHex: corHex,
       usoContinuo: usoContinuo,
       duracaoDias: duracaoDias,
+      dataInicio: dataInicio ?? DateTime(hoje.year, hoje.month, hoje.day),
       instrucoes: instrucoes,
       frequencia: frequencia,
       horarios: horarios,

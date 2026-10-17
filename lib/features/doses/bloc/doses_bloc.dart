@@ -160,13 +160,15 @@ class DosesBloc extends Bloc<DosesEvent, DosesState> {
           if (!r.extra) r.id: r,
       };
 
-      // Agrupa todas as doses agendadas por horário (minutos desde 00:00).
+      // Agrupa todas as doses agendadas por horário (minutos desde 00:00)
+      // apenas para medicamentos ativos na data selecionada.
       final Map<int, List<ItemDoseDia>> mapaHorarios = {};
       for (final med in medicamentos) {
+        if (!med.estaAtivoNaData(data)) continue;
         for (final horario in med.horarios) {
-          final minutos = horario.hour * 60 + horario.minute;
           final chaveAgendado = RegistroDose.gerarIdAgendado(dataIso, med.id, horario);
           final registro = agendadosPorId[chaveAgendado];
+          final minutos = horario.hour * 60 + horario.minute;
           (mapaHorarios[minutos] ??= []).add(
             ItemDoseDia(
               medicamento: med,
@@ -193,7 +195,7 @@ class DosesBloc extends Bloc<DosesEvent, DosesState> {
       for (final r in registros) {
         if (r.extra) {
           final med = medPorId[r.medicamentoId];
-          if (med != null) {
+          if (med != null && med.estaAtivoNaData(data)) {
             extras.add(
               ItemDoseDia(
                 medicamento: med,
@@ -207,9 +209,11 @@ class DosesBloc extends Bloc<DosesEvent, DosesState> {
         }
       }
 
-      // Ordena medicamentos disponíveis priorizando os de uso SOS (quandoNecessario).
-      final disponiveis = List<Medicamento>.from(medicamentos)
-        ..sort((a, b) {
+      // Ordena medicamentos disponíveis ativos na data priorizando os de uso SOS (quandoNecessario).
+      final disponiveis = [
+        for (final m in medicamentos)
+          if (m.estaAtivoNaData(data)) m,
+      ]..sort((a, b) {
           final aSos = a.frequencia == Frequencia.quandoNecessario ? 0 : 1;
           final bSos = b.frequencia == Frequencia.quandoNecessario ? 0 : 1;
           if (aSos != bSos) return aSos.compareTo(bSos);

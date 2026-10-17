@@ -177,6 +177,11 @@ class _DetalheMedicamentoPageState extends State<DetalheMedicamentoPage> {
                   rotulo: 'Intervalo',
                   valor: 'A cada ${_medicamento.intervaloHoras} horas',
                 ),
+              if (_medicamento.dataInicio != null)
+                _LinhaDetalhe(
+                  rotulo: 'Início do tratamento',
+                  valor: _formatarDataDetalhe(_medicamento.dataInicio!),
+                ),
               _LinhaDetalhe(
                 rotulo: 'Tratamento',
                 valor: _medicamento.usoContinuo
@@ -364,4 +369,11 @@ class _LinhaDetalhe extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatarDataDetalhe(DateTime data) {
+  final d = data.day.toString().padLeft(2, '0');
+  final m = data.month.toString().padLeft(2, '0');
+  final y = data.year.toString().padLeft(4, '0');
+  return '$d/$m/$y';
 }

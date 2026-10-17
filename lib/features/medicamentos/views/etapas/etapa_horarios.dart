@@ -29,9 +29,11 @@ class EtapaHorarios extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.healing_outlined,
+                      state.forma.icon,
                       size: 48,
-                      color: theme.colorScheme.primary,
+                      color: state.corHex != null
+                          ? Color(state.corHex!)
+                          : theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 20),

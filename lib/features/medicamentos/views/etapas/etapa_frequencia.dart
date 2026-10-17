@@ -199,8 +199,21 @@ class EtapaFrequencia extends StatelessWidget {
 
             // Duração do Tratamento
             Text(
-              'Duração do Tratamento',
+              'Início e Duração do Tratamento',
               style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            _SeletorDataInicioTratamento(
+              dataInicio: state.dataInicio,
+              onSelectData: (novaData) {
+                context.read<CadastroMedicamentoBloc>().add(
+                      UpdateTratamentoDuracao(
+                        usoContinuo: state.usoContinuo,
+                        duracaoDias: state.duracaoDias,
+                        dataInicio: novaData,
+                      ),
+                    );
+              },
             ),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
@@ -272,11 +285,86 @@ class EtapaFrequencia extends StatelessWidget {
                   ),
                 ],
               ),
+              if (state.duracaoDias != null && state.duracaoDias! > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Término previsto: ${_formatarDataPtBr(_calcularDataFim(state.dataInicio, state.duracaoDias!))}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 16),
           ],
         );
       },
+    );
+  }
+}
+
+DateTime _normalizarData(DateTime d) => DateTime(d.year, d.month, d.day);
+
+DateTime _calcularDataFim(DateTime? dataInicio, int duracaoDias) {
+  final inicio = _normalizarData(dataInicio ?? DateTime.now());
+  return DateTime(inicio.year, inicio.month, inicio.day + duracaoDias - 1);
+}
+
+String _formatarDataPtBr(DateTime data) {
+  final d = data.day.toString().padLeft(2, '0');
+  final m = data.month.toString().padLeft(2, '0');
+  final y = data.year.toString().padLeft(4, '0');
+  return '$d/$m/$y';
+}
+
+class _SeletorDataInicioTratamento extends StatelessWidget {
+  const _SeletorDataInicioTratamento({
+    required this.dataInicio,
+    required this.onSelectData,
+  });
+
+  final DateTime? dataInicio;
+  final ValueChanged<DateTime> onSelectData;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hoje = _normalizarData(DateTime.now());
+    final dataEfetiva = _normalizarData(dataInicio ?? hoje);
+    final isHoje = dataEfetiva == hoje;
+    final textoData = isHoje
+        ? 'Hoje (${_formatarDataPtBr(dataEfetiva)})'
+        : _formatarDataPtBr(dataEfetiva);
+
+    return InkWell(
+      key: const Key('seletor_data_inicio_tratamento'),
+      borderRadius: BorderRadius.circular(12),
+      onTap: () async {
+        final selecionada = await showDatePicker(
+          context: context,
+          initialDate: dataEfetiva,
+          firstDate: DateTime(hoje.year - 5),
+          lastDate: DateTime(hoje.year + 5),
+          helpText: 'Início do tratamento',
+          cancelText: 'Cancelar',
+          confirmText: 'Confirmar',
+        );
+        if (selecionada != null) {
+          onSelectData(_normalizarData(selecionada));
+        }
+      },
+      child: InputDecorator(
+        decoration: const InputDecoration(
+          labelText: 'Início do tratamento',
+          border: OutlineInputBorder(),
+          prefixIcon: Icon(Icons.event_outlined),
+          suffixIcon: Icon(Icons.edit_calendar_outlined),
+        ),
+        child: Text(
+          textoData,
+          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+        ),
+      ),
     );
   }
 }

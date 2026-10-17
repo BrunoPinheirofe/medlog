@@ -104,6 +104,7 @@ class CadastroMedicamentoBloc
       emit(state.copyWith(
         usoContinuo: event.usoContinuo,
         duracaoDias: event.duracaoDias,
+        dataInicio: event.dataInicio,
       ));
     });
 

@@ -61,14 +61,16 @@ class UpdateFrequencia extends CadastroMedicamentoEvent {
 class UpdateTratamentoDuracao extends CadastroMedicamentoEvent {
   final bool usoContinuo;
   final int? duracaoDias;
+  final DateTime? dataInicio;
 
   const UpdateTratamentoDuracao({
     required this.usoContinuo,
     this.duracaoDias,
+    this.dataInicio,
   });
 
   @override
-  List<Object?> get props => [usoContinuo, duracaoDias];
+  List<Object?> get props => [usoContinuo, duracaoDias, dataInicio];
 }
 
 class UpdateHorarios extends CadastroMedicamentoEvent {

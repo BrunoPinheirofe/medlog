@@ -307,29 +307,48 @@ class _LinhaMedicamentoDose extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 12, 8, 12),
         child: Row(
           children: [
-            // Ícone/Avatar quadrado arredondado estilo referência
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: item.isTomada
-                    ? Colors.green.withValues(alpha: 0.15)
-                    : cor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                item.isTomada
-                    ? Icons.check_circle
-                    : item.isPulada
-                    ? Icons.remove_circle_outline
-                    : med.forma.icon,
-                color: item.isTomada
-                    ? Colors.green.shade700
-                    : item.isPulada
-                    ? theme.colorScheme.outline
-                    : cor,
-                size: 26,
-              ),
+            // Ícone/Avatar quadrado arredondado mantendo o ícone da forma farmacêutica
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: item.isTomada
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : cor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    med.forma.icon,
+                    color: item.isTomada
+                        ? Colors.green.shade700
+                        : item.isPulada
+                        ? theme.colorScheme.outline
+                        : cor,
+                    size: 26,
+                  ),
+                ),
+                if (item.isTomada || item.isPulada)
+                  Positioned(
+                    right: -4,
+                    bottom: -4,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        item.isTomada ? Icons.check_circle : Icons.remove_circle,
+                        size: 18,
+                        color: item.isTomada
+                            ? Colors.green.shade700
+                            : theme.colorScheme.outline,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -479,10 +498,30 @@ class _SecaoQuandoNecessario extends StatelessWidget {
               ),
             ),
             child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.green.withValues(alpha: 0.15),
-                foregroundColor: Colors.green.shade700,
-                child: const Icon(Icons.check),
+              leading: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.green.withValues(alpha: 0.15),
+                    foregroundColor: Colors.green.shade700,
+                    child: Icon(extra.medicamento.forma.icon),
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               title: Text(
                 extra.medicamento.nome,
@@ -587,10 +626,13 @@ class _SecaoQuandoNecessario extends StatelessWidget {
                       final med = medicamentosDisponiveis[index];
                       final isSos =
                           med.frequencia == Frequencia.quandoNecessario;
+                      final cor = med.corHex != null
+                          ? Color(med.corHex!)
+                          : theme.colorScheme.primary;
                       return ListTile(
                         leading: Icon(
                           med.forma.icon,
-                          color: theme.colorScheme.primary,
+                          color: cor,
                         ),
                         title: Text(med.nome),
                         subtitle: Text(

@@ -93,7 +93,12 @@ class _EtapaNomeFormaState extends State<EtapaNomeForma> {
               decoration: InputDecoration(
                 labelText: 'Nome do medicamento *',
                 hintText: 'Ex: Paracetamol, Losartana, Amoxicilina',
-                prefixIcon: const Icon(Icons.medication_outlined),
+                prefixIcon: Icon(
+                  state.forma.icon,
+                  color: state.corHex != null
+                      ? Color(state.corHex!)
+                      : theme.colorScheme.primary,
+                ),
                 border: const OutlineInputBorder(),
                 errorText: isNomeInvalido
                     ? 'Informe um nome válido com ao menos 2 caracteres'

@@ -179,6 +179,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(medRepo.store['med-1']!.estoqueAtual, 9);
+    // O ícone de comprimido continua visível nas duas doses de Losartana + badge de check
+    expect(find.byIcon(Icons.medication), findsNWidgets(2));
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
 
     // Silencia apenas a primeira dose (07:00); a de 19:00 permanece ativa
     await tester.tap(find.byTooltip('Silenciar esta dose').first);
@@ -192,11 +195,73 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Dipirona SOS'), findsOneWidget);
+    expect(find.byIcon(Icons.water_drop_outlined), findsOneWidget);
     await tester.tap(find.text('Dipirona SOS'));
     await tester.pumpAndSettle();
 
-    // Verifica que a dose extra foi exibida e descontou do estoque da Dipirona SOS
+    // Verifica que a dose extra foi exibida com o ícone de gotas e descontou do estoque
     expect(find.textContaining('Dose extra registrada às'), findsOneWidget);
+    expect(find.byIcon(Icons.water_drop_outlined), findsOneWidget);
     expect(medRepo.store['med-2']!.estoqueAtual, 4);
+  });
+
+  testWidgets(
+      'Não exibe doses em dias anteriores ao início do tratamento nem após o término de tratamento temporário',
+      (tester) async {
+    final antibiotico = Medicamento(
+      id: 'med-temp',
+      nome: 'Amoxicilina',
+      forma: FormaMedicamento.comprimido,
+      usoContinuo: false,
+      duracaoDias: 2,
+      dataInicio: DateTime(2026, 10, 15), // Ativo apenas em 15/10 e 16/10
+      frequencia: Frequencia.umaVez,
+      horarios: const [TimeOfDay(hour: 8, minute: 0)],
+      estoqueAtual: 10,
+      estoqueMinimo: 2,
+    );
+
+    final medRepo = FakeMedicamentoRepository()
+      ..store[antibiotico.id] = antibiotico;
+    final doseRepo = FakeDoseRepository(medRepo);
+    // Mesmo que houvesse um registro salvo no dia 14 (anterior ao início em 15/10),
+    // a dose não deve aparecer antes do início do tratamento.
+    await doseRepo.registrarStatusDose(
+      medicamento: antibiotico,
+      dataIso: '2026-10-14',
+      horario: const TimeOfDay(hour: 8, minute: 0),
+      novoStatus: StatusDose.tomada,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DosesPage(
+            medicamentoRepository: medRepo,
+            doseRepository: doseRepo,
+            dataInicial: DateTime(2026, 10, 15),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Em 15/10 (início): aparece
+    expect(find.text('Amoxicilina'), findsOneWidget);
+
+    // Seleciona 14/10 (antes do início): não deve aparecer
+    await tester.tap(find.text('14'));
+    await tester.pumpAndSettle();
+    expect(find.text('Amoxicilina'), findsNothing);
+
+    // Seleciona 16/10 (2º e último dia): aparece
+    await tester.tap(find.text('16'));
+    await tester.pumpAndSettle();
+    expect(find.text('Amoxicilina'), findsOneWidget);
+
+    // Seleciona 17/10 (após os 2 dias de duração): não deve aparecer
+    await tester.tap(find.text('17'));
+    await tester.pumpAndSettle();
+    expect(find.text('Amoxicilina'), findsNothing);
   });
 }
