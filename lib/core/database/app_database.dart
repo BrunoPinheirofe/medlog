@@ -7,7 +7,7 @@ class AppDatabase {
   AppDatabase._();
 
   static const String databaseName = 'medlog.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   static Future<Database>? _instance;
 
@@ -56,7 +56,7 @@ class AppDatabase {
         data_inicio TEXT,
         instrucoes TEXT,
         intervalo_horas INTEGER,
-        estoque_atual INTEGER NOT NULL DEFAULT 0,
+        estoque_atual REAL NOT NULL DEFAULT 0,
         estoque_minimo INTEGER NOT NULL DEFAULT 5,
         foto_url TEXT,
         criado_em INTEGER NOT NULL,
@@ -86,6 +86,7 @@ class AppDatabase {
         status TEXT NOT NULL,
         silenciada INTEGER NOT NULL DEFAULT 0,
         extra INTEGER NOT NULL DEFAULT 0,
+        estoque_consumido REAL NOT NULL DEFAULT 0,
         registrado_em INTEGER NOT NULL
       );
     ''');
@@ -112,6 +113,69 @@ class AppDatabase {
         SET data_inicio = strftime('%Y-%m-%d', criado_em / 1000, 'unixepoch', 'localtime')
         WHERE data_inicio IS NULL;
       ''');
+    }
+    if (oldVersion < 4 && newVersion >= 4) {
+      await _migrateV3ParaV4(db);
+    }
+  }
+
+  static Future<void> _migrateV3ParaV4(Database db) async {
+    await db.execute('PRAGMA foreign_keys = OFF;');
+    try {
+      await db.transaction((txn) async {
+        await txn.execute('''
+          CREATE TABLE medicamentos_v4 (
+            id TEXT PRIMARY KEY,
+            nome TEXT NOT NULL,
+            forma TEXT NOT NULL,
+            frequencia TEXT NOT NULL,
+            dose_valor REAL,
+            dose_unidade TEXT,
+            cor_hex INTEGER,
+            uso_continuo INTEGER NOT NULL DEFAULT 1,
+            duracao_dias INTEGER,
+            data_inicio TEXT,
+            instrucoes TEXT,
+            intervalo_horas INTEGER,
+            estoque_atual REAL NOT NULL DEFAULT 0,
+            estoque_minimo INTEGER NOT NULL DEFAULT 5,
+            foto_url TEXT,
+            criado_em INTEGER NOT NULL,
+            atualizado_em INTEGER NOT NULL
+          );
+        ''');
+
+        await txn.execute('''
+          INSERT INTO medicamentos_v4 (
+            id, nome, forma, frequencia, dose_valor, dose_unidade, cor_hex,
+            uso_continuo, duracao_dias, data_inicio, instrucoes, intervalo_horas,
+            estoque_atual, estoque_minimo, foto_url, criado_em, atualizado_em
+          )
+          SELECT
+            id, nome, forma, frequencia, dose_valor, dose_unidade, cor_hex,
+            uso_continuo, duracao_dias, data_inicio, instrucoes, intervalo_horas,
+            CAST(estoque_atual AS REAL), estoque_minimo, foto_url, criado_em, atualizado_em
+          FROM medicamentos;
+        ''');
+
+        await txn.execute('DROP TABLE medicamentos;');
+        await txn.execute('ALTER TABLE medicamentos_v4 RENAME TO medicamentos;');
+
+        final cols = await txn.rawQuery('PRAGMA table_info(registros_dose);');
+        final temEstoqueConsumido = cols.any((c) => c['name'] == 'estoque_consumido');
+        if (!temEstoqueConsumido) {
+          await txn.execute(
+            'ALTER TABLE registros_dose ADD COLUMN estoque_consumido REAL NOT NULL DEFAULT 0;',
+          );
+        }
+
+        final fkErrors = await txn.rawQuery('PRAGMA foreign_key_check;');
+        if (fkErrors.isNotEmpty) {
+          throw StateError('Falha na verificação de chaves estrangeiras na migração v4: $fkErrors');
+        }
+      });
+    } finally {
+      await db.execute('PRAGMA foreign_keys = ON;');
     }
   }
 }

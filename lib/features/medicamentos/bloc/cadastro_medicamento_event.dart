@@ -120,7 +120,7 @@ class AdicionarHorario extends CadastroMedicamentoEvent {
 }
 
 class UpdateEstoqueInstrucoes extends CadastroMedicamentoEvent {
-  final int estoqueAtual;
+  final double estoqueAtual;
   final int? estoqueMinimo;
   final String instrucoes;
 

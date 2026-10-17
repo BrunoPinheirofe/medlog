@@ -17,5 +17,5 @@ abstract class MedicamentoRepository {
   Future<void> delete(String id);
 
   /// Atualiza o estoque atual e o mínimo de um medicamento.
-  Future<void> updateEstoque(String id, int estoqueAtual, int estoqueMinimo);
+  Future<void> updateEstoque(String id, double estoqueAtual, int estoqueMinimo);
 }

@@ -39,7 +39,7 @@ class FakeMedicamentoRepository implements MedicamentoRepository {
   }
 
   @override
-  Future<void> updateEstoque(String id, int estoqueAtual, int estoqueMinimo) async {
+  Future<void> updateEstoque(String id, double estoqueAtual, int estoqueMinimo) async {
     if (erroAoAtualizarEstoque != null) throw erroAoAtualizarEstoque!;
     final atual = store[id];
     if (atual != null) {

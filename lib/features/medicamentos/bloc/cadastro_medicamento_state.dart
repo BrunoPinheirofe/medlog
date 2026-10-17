@@ -14,7 +14,7 @@ class CadastroMedicamentoState extends Equatable {
   final Frequencia frequencia;
   final List<TimeOfDay> horarios;
   final int? intervaloHoras;
-  final int estoqueAtual;
+  final double estoqueAtual;
   final int estoqueMinimo;
   final String instrucoes;
   final String? fotoUrl;
@@ -152,7 +152,7 @@ class CadastroMedicamentoState extends Equatable {
     Frequencia? frequencia,
     List<TimeOfDay>? horarios,
     int? intervaloHoras,
-    int? estoqueAtual,
+    double? estoqueAtual,
     int? estoqueMinimo,
     String? instrucoes,
     String? fotoUrl,

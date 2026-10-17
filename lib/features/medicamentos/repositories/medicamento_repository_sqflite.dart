@@ -99,7 +99,7 @@ class MedicamentoRepositorySqflite implements MedicamentoRepository {
   }
 
   @override
-  Future<void> updateEstoque(String id, int estoqueAtual, int estoqueMinimo) async {
+  Future<void> updateEstoque(String id, double estoqueAtual, int estoqueMinimo) async {
     final Database db = await _databaseProvider();
     await db.update(
       'medicamentos',

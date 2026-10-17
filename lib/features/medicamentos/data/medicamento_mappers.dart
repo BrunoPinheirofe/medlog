@@ -94,7 +94,7 @@ Medicamento medicamentoFromRow(
     horarios: [
       for (final linha in horarioRows) ScheduleCalculator.parse(linha['hora']! as String),
     ],
-    estoqueAtual: row['estoque_atual']! as int,
+    estoqueAtual: (row['estoque_atual']! as num).toDouble(),
     estoqueMinimo: row['estoque_minimo']! as int,
     fotoUrl: row['foto_url'] as String?,
   );

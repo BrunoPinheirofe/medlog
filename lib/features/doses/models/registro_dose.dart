@@ -22,6 +22,7 @@ class RegistroDose extends Equatable {
   final StatusDose status;
   final bool silenciada;
   final bool extra;
+  final double estoqueConsumido;
   final int registradoEm;
 
   const RegistroDose({
@@ -32,6 +33,7 @@ class RegistroDose extends Equatable {
     required this.status,
     this.silenciada = false,
     this.extra = false,
+    this.estoqueConsumido = 0,
     required this.registradoEm,
   });
 
@@ -48,6 +50,7 @@ class RegistroDose extends Equatable {
       'status': status.name,
       'silenciada': silenciada ? 1 : 0,
       'extra': extra ? 1 : 0,
+      'estoque_consumido': estoqueConsumido,
       'registrado_em': registradoEm,
     };
   }
@@ -61,6 +64,7 @@ class RegistroDose extends Equatable {
       status: StatusDose.values.byName(row['status']! as String),
       silenciada: ((row['silenciada'] as int?) ?? 0) == 1,
       extra: (row['extra']! as int) == 1,
+      estoqueConsumido: ((row['estoque_consumido'] as num?) ?? 0).toDouble(),
       registradoEm: row['registrado_em']! as int,
     );
   }
@@ -74,6 +78,7 @@ class RegistroDose extends Equatable {
         status,
         silenciada,
         extra,
+        estoqueConsumido,
         registradoEm,
       ];
 }
