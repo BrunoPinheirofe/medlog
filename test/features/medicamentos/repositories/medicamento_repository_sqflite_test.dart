@@ -31,7 +31,7 @@ void main() {
       TimeOfDay(hour: 20, minute: 30),
     ],
     int? intervaloHoras,
-    int estoqueAtual = 12,
+    double estoqueAtual = 12,
     int estoqueMinimo = 5,
     String? fotoUrl,
   }) {

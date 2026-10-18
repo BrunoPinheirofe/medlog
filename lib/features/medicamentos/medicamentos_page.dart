@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'bloc/medicamentos_bloc.dart';
+import 'domain/estoque_dose_calculator.dart';
 import 'models/medicamento.dart';
 import 'repositories/medicamento_repository.dart';
 import 'views/detalhe_medicamento_page.dart';
@@ -152,7 +153,7 @@ class _MedicamentoCard extends StatelessWidget {
     final String detalhes = [
       if (medicamento.doseValor != null) medicamento.descricaoDose,
       medicamento.frequencia.label,
-      if (estoqueBaixo) 'Estoque baixo (atual: ${medicamento.estoqueAtual})',
+      if (estoqueBaixo) 'Estoque baixo (atual: ${formatarEstoque(medicamento.estoqueAtual)})',
     ].join(' • ');
 
     final Color cor = medicamento.corHex != null

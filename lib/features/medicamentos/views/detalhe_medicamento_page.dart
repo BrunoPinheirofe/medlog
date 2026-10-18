@@ -1,9 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../domain/estoque_dose_calculator.dart';
 import '../domain/schedule_calculator.dart';
 import '../models/medicamento.dart';
 import '../repositories/medicamento_repository.dart';
 import 'cadastro_medicamento_page.dart';
+import 'modals/edicao_rapida_modals.dart';
 
 /// Exibe o popup de confirmação antes de excluir um medicamento.
 Future<bool> confirmarExclusaoMedicamento(
@@ -77,6 +79,57 @@ class _DetalheMedicamentoPageState extends State<DetalheMedicamentoPage> {
         _medicamento = atualizado;
       });
     }
+  }
+
+  void _aplicarResultadoModal(Medicamento? atualizado) {
+    if (atualizado != null && mounted) {
+      setState(() {
+        _medicamento = atualizado;
+      });
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Medicamento atualizado com sucesso!'),
+          ),
+        );
+    }
+  }
+
+  Future<void> _editarRapidoDose() async {
+    final atualizado = await mostrarModalEditarDose(
+      context,
+      medicamento: _medicamento,
+      repository: widget.repository,
+    );
+    _aplicarResultadoModal(atualizado);
+  }
+
+  Future<void> _editarRapidoHorarios() async {
+    final atualizado = await mostrarModalEditarHorarios(
+      context,
+      medicamento: _medicamento,
+      repository: widget.repository,
+    );
+    _aplicarResultadoModal(atualizado);
+  }
+
+  Future<void> _editarRapidoEstoque() async {
+    final atualizado = await mostrarModalEditarEstoque(
+      context,
+      medicamento: _medicamento,
+      repository: widget.repository,
+    );
+    _aplicarResultadoModal(atualizado);
+  }
+
+  Future<void> _editarRapidoInstrucoes() async {
+    final atualizado = await mostrarModalEditarInstrucoes(
+      context,
+      medicamento: _medicamento,
+      repository: widget.repository,
+    );
+    _aplicarResultadoModal(atualizado);
   }
 
   Future<void> _excluirMedicamento() async {
@@ -156,6 +209,12 @@ class _DetalheMedicamentoPageState extends State<DetalheMedicamentoPage> {
                       ],
                     ),
                   ),
+                  IconButton(
+                    key: const Key('btn_editar_rapido_dose'),
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Editar dose',
+                    onPressed: _editarRapidoDose,
+                  ),
                 ],
               ),
             ),
@@ -196,6 +255,9 @@ class _DetalheMedicamentoPageState extends State<DetalheMedicamentoPage> {
           _SecaoInfoCard(
             icone: Icons.access_time,
             titulo: 'Horários das Doses',
+            editButtonKey: const Key('btn_editar_rapido_horarios'),
+            editTooltip: 'Editar horários',
+            onEdit: _editarRapidoHorarios,
             children: [
               if (_medicamento.frequencia == Frequencia.quandoNecessario)
                 Text(
@@ -233,10 +295,13 @@ class _DetalheMedicamentoPageState extends State<DetalheMedicamentoPage> {
           _SecaoInfoCard(
             icone: Icons.inventory_2_outlined,
             titulo: 'Controle de Estoque',
+            editButtonKey: const Key('btn_editar_rapido_estoque'),
+            editTooltip: 'Editar estoque',
+            onEdit: _editarRapidoEstoque,
             children: [
               _LinhaDetalhe(
                 rotulo: 'Estoque atual',
-                valor: '${_medicamento.estoqueAtual} un.',
+                valor: '${formatarEstoque(_medicamento.estoqueAtual)} un.',
               ),
               _LinhaDetalhe(
                 rotulo: 'Alerta mínimo',
@@ -276,6 +341,9 @@ class _DetalheMedicamentoPageState extends State<DetalheMedicamentoPage> {
           _SecaoInfoCard(
             icone: Icons.notes_outlined,
             titulo: 'Instruções e Informações Adicionais',
+            editButtonKey: const Key('btn_editar_rapido_instrucoes'),
+            editTooltip: 'Editar instruções',
+            onEdit: _editarRapidoInstrucoes,
             children: [
               Text(
                 (_medicamento.instrucoes != null &&
@@ -302,11 +370,17 @@ class _SecaoInfoCard extends StatelessWidget {
     required this.icone,
     required this.titulo,
     required this.children,
+    this.onEdit,
+    this.editTooltip,
+    this.editButtonKey,
   });
 
   final IconData icone;
   final String titulo;
   final List<Widget> children;
+  final VoidCallback? onEdit;
+  final String? editTooltip;
+  final Key? editButtonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -322,12 +396,22 @@ class _SecaoInfoCard extends StatelessWidget {
               children: [
                 Icon(icone, size: 20, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
-                Text(
-                  titulo,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    titulo,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                if (onEdit != null)
+                  IconButton(
+                    key: editButtonKey,
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    tooltip: editTooltip ?? 'Editar',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onEdit,
+                  ),
               ],
             ),
             const Divider(height: 20),

@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:medlog/features/doses/doses_page.dart';
 import 'package:medlog/features/doses/models/registro_dose.dart';
 import 'package:medlog/features/doses/repositories/dose_repository.dart';
+import 'package:medlog/features/medicamentos/domain/estoque_dose_calculator.dart';
 import 'package:medlog/features/medicamentos/models/medicamento.dart';
 
 import '../../medicamentos/repositories/fake_repository.dart';
@@ -27,9 +30,30 @@ class FakeDoseRepository implements DoseRepository {
     required StatusDose novoStatus,
   }) async {
     final id = RegistroDose.gerarIdAgendado(dataIso, medicamento.id, horario);
-    final anterior = store[id]?.status ?? StatusDose.pendente;
-    final silenciadaAnterior = store[id]?.silenciada ?? false;
+    final existente = store[id];
+    final anterior = existente?.status ?? StatusDose.pendente;
+    final silenciadaAnterior = existente?.silenciada ?? false;
+    final consumidoAnterior = existente?.estoqueConsumido ?? 0.0;
     if (anterior == novoStatus) return;
+
+    double novoConsumido = 0.0;
+    final medAtual = medRepo.store[medicamento.id];
+    if (medAtual != null) {
+      if (anterior != StatusDose.tomada && novoStatus == StatusDose.tomada) {
+        final dosePadrao = quantidadeConsumidaPorDose(medicamento);
+        novoConsumido = math.max(0.0, math.min(dosePadrao, medAtual.estoqueAtual));
+        medRepo.store[medicamento.id] = medAtual.copyWith(
+          estoqueAtual: math.max(0.0, medAtual.estoqueAtual - novoConsumido),
+        );
+      } else if (anterior == StatusDose.tomada && novoStatus != StatusDose.tomada) {
+        final valorEstorno = consumidoAnterior > 0
+            ? consumidoAnterior
+            : (medAtual.estoqueAtual > 0 ? quantidadeConsumidaPorDose(medicamento) : 0.0);
+        medRepo.store[medicamento.id] = medAtual.copyWith(
+          estoqueAtual: medAtual.estoqueAtual + valorEstorno,
+        );
+      }
+    }
 
     if (novoStatus == StatusDose.pendente && !silenciadaAnterior) {
       store.remove(id);
@@ -42,21 +66,9 @@ class FakeDoseRepository implements DoseRepository {
         status: novoStatus,
         silenciada: silenciadaAnterior,
         extra: false,
+        estoqueConsumido: novoConsumido,
         registradoEm: ++_seq,
       );
-    }
-
-    final medAtual = medRepo.store[medicamento.id];
-    if (medAtual != null) {
-      if (anterior != StatusDose.tomada && novoStatus == StatusDose.tomada) {
-        medRepo.store[medicamento.id] = medAtual.copyWith(
-          estoqueAtual: medAtual.estoqueAtual > 0 ? medAtual.estoqueAtual - 1 : 0,
-        );
-      } else if (anterior == StatusDose.tomada && novoStatus != StatusDose.tomada) {
-        medRepo.store[medicamento.id] = medAtual.copyWith(
-          estoqueAtual: medAtual.estoqueAtual + 1,
-        );
-      }
     }
   }
 
@@ -68,7 +80,9 @@ class FakeDoseRepository implements DoseRepository {
     required bool silenciada,
   }) async {
     final id = RegistroDose.gerarIdAgendado(dataIso, medicamento.id, horario);
-    final statusAtual = store[id]?.status ?? StatusDose.pendente;
+    final existente = store[id];
+    final statusAtual = existente?.status ?? StatusDose.pendente;
+    final consumidoAtual = existente?.estoqueConsumido ?? 0.0;
     if (statusAtual == StatusDose.pendente && !silenciada) {
       store.remove(id);
     } else {
@@ -80,6 +94,7 @@ class FakeDoseRepository implements DoseRepository {
         status: statusAtual,
         silenciada: silenciada,
         extra: false,
+        estoqueConsumido: consumidoAtual,
         registradoEm: ++_seq,
       );
     }
@@ -92,6 +107,15 @@ class FakeDoseRepository implements DoseRepository {
     required TimeOfDay horario,
   }) async {
     final id = 'extra_${++_seq}_${medicamento.id}';
+    double consumido = 0.0;
+    final medAtual = medRepo.store[medicamento.id];
+    if (medAtual != null) {
+      final dosePadrao = quantidadeConsumidaPorDose(medicamento);
+      consumido = math.max(0.0, math.min(dosePadrao, medAtual.estoqueAtual));
+      medRepo.store[medicamento.id] = medAtual.copyWith(
+        estoqueAtual: math.max(0.0, medAtual.estoqueAtual - consumido),
+      );
+    }
     store[id] = RegistroDose(
       id: id,
       medicamentoId: medicamento.id,
@@ -99,14 +123,9 @@ class FakeDoseRepository implements DoseRepository {
       horario: horario,
       status: StatusDose.tomada,
       extra: true,
+      estoqueConsumido: consumido,
       registradoEm: _seq,
     );
-    final medAtual = medRepo.store[medicamento.id];
-    if (medAtual != null) {
-      medRepo.store[medicamento.id] = medAtual.copyWith(
-        estoqueAtual: medAtual.estoqueAtual > 0 ? medAtual.estoqueAtual - 1 : 0,
-      );
-    }
   }
 
   @override
@@ -114,11 +133,12 @@ class FakeDoseRepository implements DoseRepository {
     required String registroId,
     required String medicamentoId,
   }) async {
-    if (store.remove(registroId) != null) {
+    final removido = store.remove(registroId);
+    if (removido != null) {
       final medAtual = medRepo.store[medicamentoId];
-      if (medAtual != null) {
+      if (medAtual != null && removido.estoqueConsumido > 0) {
         medRepo.store[medicamentoId] = medAtual.copyWith(
-          estoqueAtual: medAtual.estoqueAtual + 1,
+          estoqueAtual: medAtual.estoqueAtual + removido.estoqueConsumido,
         );
       }
     }

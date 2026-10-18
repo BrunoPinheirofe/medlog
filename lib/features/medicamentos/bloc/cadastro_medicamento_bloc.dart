@@ -71,7 +71,9 @@ class CadastroMedicamentoBloc
     on<UpdateDosagem>((event, emit) {
       emit(state.copyWith(
         doseValor: event.doseValor,
+        clearDoseValor: event.doseValor == null,
         doseUnidade: event.doseUnidade,
+        errorMessage: null,
       ));
     });
 

@@ -154,4 +154,90 @@ void main() {
     expect(find.text('Dipirona Sódica'), findsOneWidget);
     expect(repository.store['1']?.nome, 'Dipirona Sódica');
   });
+
+  testWidgets('US3: formata saldo fracionado com vírgula (12,5) e inteiro sem decimais (10) na lista e nos detalhes',
+      (tester) async {
+    const xaropeBaixo = Medicamento(
+      id: 'med-frac',
+      nome: 'Xarope Pediátrico',
+      forma: FormaMedicamento.liquido,
+      doseValor: 2.5,
+      doseUnidade: 'ml',
+      frequencia: Frequencia.duasVezes,
+      horarios: [TimeOfDay(hour: 8, minute: 0)],
+      estoqueAtual: 4.5,
+      estoqueMinimo: 5,
+    );
+    const medInteiro = Medicamento(
+      id: 'med-int',
+      nome: 'Vitamina D',
+      forma: FormaMedicamento.capsula,
+      frequencia: Frequencia.umaVez,
+      horarios: [TimeOfDay(hour: 12, minute: 0)],
+      estoqueAtual: 10.0,
+      estoqueMinimo: 5,
+    );
+
+    final repository = FakeMedicamentoRepository()
+      ..store[xaropeBaixo.id] = xaropeBaixo
+      ..store[medInteiro.id] = medInteiro;
+
+    await tester.pumpWidget(MaterialApp(home: MedicamentosPage(repository: repository)));
+    await tester.pumpAndSettle();
+
+    // Na listagem: estoque baixo fracionado mostra "4,5" (sem "4.5")
+    expect(find.textContaining('Estoque baixo (atual: 4,5)'), findsOneWidget);
+
+    // Abre detalhes do xarope (4,5 un.)
+    await tester.tap(find.text('Xarope Pediátrico'));
+    await tester.pumpAndSettle();
+    expect(find.text('4,5 un.'), findsOneWidget);
+    expect(find.text('Estoque baixo! Considere repor este medicamento.'), findsOneWidget);
+
+    // Volta e abre detalhes da Vitamina D (10 un. sem ".0")
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vitamina D'));
+    await tester.pumpAndSettle();
+    expect(find.text('10 un.'), findsOneWidget);
+  });
+
+  testWidgets('Sincroniza listagem principal após edições rápidas por modal na tela de detalhes',
+      (tester) async {
+    final repository = FakeMedicamentoRepository()
+      ..store[dipirona.id] = dipirona;
+
+    await tester.pumpWidget(MaterialApp(home: MedicamentosPage(repository: repository)));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('500 mg'), findsOneWidget);
+    expect(find.textContaining('Estoque baixo'), findsOneWidget);
+
+    await tester.tap(find.text('Dipirona'));
+    await tester.pumpAndSettle();
+
+    // Edita estoque rápido (+30 un.)
+    await tester.tap(find.byKey(const Key('btn_editar_rapido_estoque')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+30 un.'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+
+    // Edita dose rápida (1000 mg)
+    await tester.tap(find.byKey(const Key('btn_editar_rapido_dose')));
+    await tester.pumpAndSettle();
+    final doseField = find.widgetWithText(TextFormField, 'Dose / Concentração');
+    await tester.enterText(doseField, '1000');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+
+    // Retorna para a listagem de medicamentos
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('1000 mg'), findsOneWidget);
+    expect(find.textContaining('Estoque baixo'), findsNothing);
+  });
 }

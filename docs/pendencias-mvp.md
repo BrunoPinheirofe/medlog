@@ -24,13 +24,15 @@
   - Exibir a(s) foto(s) na tela de detalhes.
 - **Dependência:** pacote `image_picker` (ou similar) — ainda não está no `pubspec.yaml`.
 
-### 1.2 — Baixa automática de estoque
-- **Status:** repository já tem `updateEstoque` (`medicamento_repository_sqflite.dart:102`), porém **nenhum chamador usa**.
-- **Falta:**
-  - Ao registrar dose como "Tomei", subtrair a dose consumida do `estoqueAtual` do medicamento (e tratar frações: gotas/ml).
-  - Desfazer a baixa se o usuário desfizer o registro da dose.
+### 1.2 — Baixa automática de estoque ✅ Concluído (`001-baixa-automatica-estoque`)
+- **Status:** Implementado.
+- **Entregue:**
+  - Calculadora de domínio pura (`estoque_dose_calculator.dart`) que desconta `doseValor` para consumo direto (`ml`, `gotas`, `comprimido`, formas líquidas) e `1.0` para unidades de concentração (`mg`, `mcg`, `g`, `UI`) ou dose omitida.
+  - Saldo `estoqueAtual` migrado para `double` (`REAL` no SQLite v4) com coluna `estoque_consumido` em `registros_dose`, garantindo piso `0` na baixa e estorno exato ao desfazer dose agendada, em grupo ou extra/SOS.
+  - Exibição formatada em pt-BR (`formatarEstoque`: inteiros sem decimais e frações com vírgula).
 
 ### 1.3 — Alerta de estoque baixo
+- **Nota:** O banner da feature `001-low-stock-alert` consumirá o saldo fracionário (`double`) resultante do item 1.2.
 - **Falta:**
   - Banner na tela **Hoje**: *"Atenção: Restam apenas X comprimidos. Hora de comprar!"* quando `estoqueAtual <= estoqueMinimo`.
   - Considerar também `dataFim` do tratamento como gatilho de "repor".

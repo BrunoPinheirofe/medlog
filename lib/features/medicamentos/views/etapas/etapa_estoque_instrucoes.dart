@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../bloc/cadastro_medicamento_bloc.dart';
+import '../../domain/estoque_dose_calculator.dart';
 import '../../domain/schedule_calculator.dart';
 import '../../models/medicamento.dart';
 
@@ -32,7 +33,7 @@ class _EtapaEstoqueInstrucoesState extends State<EtapaEstoqueInstrucoes> {
     super.initState();
     final state = context.read<CadastroMedicamentoBloc>().state;
     _estoqueAtualController = TextEditingController(
-      text: state.estoqueAtual > 0 ? state.estoqueAtual.toString() : '',
+      text: state.estoqueAtual > 0 ? formatarEstoque(state.estoqueAtual) : '',
     );
     _estoqueMinimoController = TextEditingController(
       text: state.estoqueMinimo.toString(),
@@ -101,7 +102,7 @@ class _EtapaEstoqueInstrucoesState extends State<EtapaEstoqueInstrucoes> {
                   flex: 3,
                   child: TextFormField(
                     controller: _estoqueAtualController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Estoque atual',
                       hintText: 'Ex: 30',
@@ -110,7 +111,7 @@ class _EtapaEstoqueInstrucoesState extends State<EtapaEstoqueInstrucoes> {
                       prefixIcon: Icon(Icons.inventory_2_outlined),
                     ),
                     onChanged: (value) {
-                      final atual = int.tryParse(value) ?? 0;
+                      final atual = double.tryParse(value.replaceAll(',', '.')) ?? 0;
                       context.read<CadastroMedicamentoBloc>().add(
                             UpdateEstoqueInstrucoes(
                               atual,
@@ -159,7 +160,7 @@ class _EtapaEstoqueInstrucoesState extends State<EtapaEstoqueInstrucoes> {
                   label: Text('+$qtd un.'),
                   onPressed: () {
                     final novoTotal = state.estoqueAtual + qtd;
-                    _estoqueAtualController.text = novoTotal.toString();
+                    _estoqueAtualController.text = formatarEstoque(novoTotal);
                     context.read<CadastroMedicamentoBloc>().add(
                           UpdateEstoqueInstrucoes(
                             novoTotal,
@@ -299,7 +300,7 @@ class _EtapaEstoqueInstrucoesState extends State<EtapaEstoqueInstrucoes> {
                     if (state.estoqueAtual > 0) ...[
                       _buildLinhaResumo(
                         'Estoque:',
-                        '${state.estoqueAtual} un. (Alerta em ${state.estoqueMinimo} un.)',
+                        '${formatarEstoque(state.estoqueAtual)} un. (Alerta em ${state.estoqueMinimo} un.)',
                         theme,
                       ),
                     ],

@@ -8,7 +8,8 @@ abstract class DoseRepository {
   Future<List<RegistroDose>> getByData(String dataIso);
 
   /// Registra ou atualiza o status de uma dose agendada e ajusta o estoque
-  /// (`-1` ao marcar como tomada, `+1` ao sair de tomada).
+  /// descontando a dose consumida ao marcar como tomada (piso 0) e estornando
+  /// o valor efetivamente descontado ao sair de tomada.
   Future<void> registrarStatusDose({
     required Medicamento medicamento,
     required String dataIso,
@@ -24,14 +25,14 @@ abstract class DoseRepository {
     required bool silenciada,
   });
 
-  /// Registra uma dose extra/SOS no horário informado e desconta 1 unidade do estoque.
+  /// Registra uma dose extra/SOS no horário informado e desconta a dose consumida do estoque.
   Future<void> registrarDoseExtra({
     required Medicamento medicamento,
     required String dataIso,
     required TimeOfDay horario,
   });
 
-  /// Remove uma dose extra/SOS e devolve 1 unidade ao estoque.
+  /// Remove uma dose extra/SOS e devolve a quantidade descontada ao estoque.
   Future<void> removerDoseExtra({
     required String registroId,
     required String medicamentoId,

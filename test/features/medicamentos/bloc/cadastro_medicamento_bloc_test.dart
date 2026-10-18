@@ -298,5 +298,48 @@ void main() {
       expect(salvo!.nome, 'Losartana Potássica');
       await editBloc.close();
     });
+
+    test('UpdateDosagem permite limpar doseValor para null e SaveMedicamento preserva demais campos', () async {
+      const original = Medicamento(
+        id: 'med-99',
+        nome: 'Losartana',
+        forma: FormaMedicamento.comprimido,
+        doseValor: 50,
+        doseUnidade: 'mg',
+        corHex: 0xFF2196F3,
+        frequencia: Frequencia.duasVezes,
+        horarios: [TimeOfDay(hour: 8, minute: 0), TimeOfDay(hour: 20, minute: 0)],
+        estoqueAtual: 20,
+        estoqueMinimo: 5,
+        instrucoes: 'Tomar pela manhã',
+      );
+      final repository = FakeMedicamentoRepository()..store[original.id] = original;
+      final editBloc = CadastroMedicamentoBloc(
+        repository: repository,
+        medicamentoInicial: original,
+      );
+
+      editBloc.add(const UpdateDosagem(null, 'mg'));
+      editBloc.add(SaveMedicamento());
+
+      await editBloc.stream.firstWhere((state) => state.isSuccess);
+
+      final salvo = await repository.getById('med-99');
+      expect(salvo, isNotNull);
+      expect(salvo!.doseValor, isNull);
+      expect(salvo.doseUnidade, 'mg');
+      expect(salvo.nome, 'Losartana');
+      expect(salvo.forma, FormaMedicamento.comprimido);
+      expect(salvo.corHex, 0xFF2196F3);
+      expect(salvo.frequencia, Frequencia.duasVezes);
+      expect(salvo.horarios, const [
+        TimeOfDay(hour: 8, minute: 0),
+        TimeOfDay(hour: 20, minute: 0),
+      ]);
+      expect(salvo.estoqueAtual, 20);
+      expect(salvo.estoqueMinimo, 5);
+      expect(salvo.instrucoes, 'Tomar pela manhã');
+      await editBloc.close();
+    });
   });
 }
