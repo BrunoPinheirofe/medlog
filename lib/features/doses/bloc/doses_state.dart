@@ -8,6 +8,7 @@ class DosesState extends Equatable {
   final List<GrupoHorarioDoses> gruposHorario;
   final List<ItemDoseDia> dosesExtras;
   final List<Medicamento> medicamentosDisponiveis;
+  final List<AlertaEstoqueBaixo> alertasEstoque;
   final String? errorMessage;
 
   const DosesState({
@@ -16,6 +17,7 @@ class DosesState extends Equatable {
     this.gruposHorario = const [],
     this.dosesExtras = const [],
     this.medicamentosDisponiveis = const [],
+    this.alertasEstoque = const [],
     this.errorMessage,
   });
 
@@ -27,6 +29,7 @@ class DosesState extends Equatable {
     List<GrupoHorarioDoses>? gruposHorario,
     List<ItemDoseDia>? dosesExtras,
     List<Medicamento>? medicamentosDisponiveis,
+    List<AlertaEstoqueBaixo>? alertasEstoque,
     String? errorMessage,
   }) {
     return DosesState(
@@ -35,6 +38,7 @@ class DosesState extends Equatable {
       gruposHorario: gruposHorario ?? this.gruposHorario,
       dosesExtras: dosesExtras ?? this.dosesExtras,
       medicamentosDisponiveis: medicamentosDisponiveis ?? this.medicamentosDisponiveis,
+      alertasEstoque: alertasEstoque ?? this.alertasEstoque,
       errorMessage: errorMessage,
     );
   }
@@ -46,6 +50,7 @@ class DosesState extends Equatable {
         gruposHorario,
         dosesExtras,
         medicamentosDisponiveis,
+        alertasEstoque,
         errorMessage,
       ];
 }

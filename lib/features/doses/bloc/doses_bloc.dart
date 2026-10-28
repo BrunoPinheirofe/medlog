@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../medicamentos/domain/estoque_dose_calculator.dart';
 import '../../medicamentos/models/medicamento.dart';
 import '../../medicamentos/repositories/medicamento_repository.dart';
 import '../../medicamentos/repositories/medicamento_repository_sqflite.dart';
@@ -163,17 +164,22 @@ class DosesBloc extends Bloc<DosesEvent, DosesState> {
       // Agrupa todas as doses agendadas por horário (minutos desde 00:00)
       // apenas para medicamentos ativos na data selecionada.
       final Map<int, List<ItemDoseDia>> mapaHorarios = {};
+      final Map<String, int> concluidasNoDiaPorMed = {};
       for (final med in medicamentos) {
         if (!med.estaAtivoNaData(data)) continue;
         for (final horario in med.horarios) {
           final chaveAgendado = RegistroDose.gerarIdAgendado(dataIso, med.id, horario);
           final registro = agendadosPorId[chaveAgendado];
+          final status = registro?.status ?? StatusDose.pendente;
+          if (status == StatusDose.tomada || status == StatusDose.pulada) {
+            concluidasNoDiaPorMed[med.id] = (concluidasNoDiaPorMed[med.id] ?? 0) + 1;
+          }
           final minutos = horario.hour * 60 + horario.minute;
           (mapaHorarios[minutos] ??= []).add(
             ItemDoseDia(
               medicamento: med,
               horario: horario,
-              status: registro?.status ?? StatusDose.pendente,
+              status: status,
               silenciada: registro?.silenciada ?? false,
               registroId: registro?.id,
               extra: false,
@@ -220,12 +226,19 @@ class DosesBloc extends Bloc<DosesEvent, DosesState> {
           return a.nome.compareTo(b.nome);
         });
 
+      final alertasEstoque = calcularAlertasEstoqueBaixo(
+        medicamentos: medicamentos,
+        dataReferencia: data,
+        dosesConcluidasNoDiaPorMedicamento: concluidasNoDiaPorMed,
+      );
+
       emit(state.copyWith(
         status: DosesStatus.success,
         dataSelecionada: data,
         gruposHorario: grupos,
         dosesExtras: extras,
         medicamentosDisponiveis: disponiveis,
+        alertasEstoque: alertasEstoque,
         errorMessage: null,
       ));
     } catch (e) {

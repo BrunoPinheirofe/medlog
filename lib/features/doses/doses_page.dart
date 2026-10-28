@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../medicamentos/domain/estoque_dose_calculator.dart';
 import '../medicamentos/domain/schedule_calculator.dart';
 import '../medicamentos/models/medicamento.dart';
 import '../medicamentos/repositories/medicamento_repository.dart';
@@ -64,6 +65,14 @@ class _DosesView extends StatelessWidget {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                       children: [
+                        for (final alerta in state.alertasEstoque)
+                          _BannerEstoqueBaixo(
+                            key: ValueKey(
+                              'banner_estoque_baixo_${alerta.medicamento.id}',
+                            ),
+                            alerta: alerta,
+                            medicamentoRepository: medicamentoRepository,
+                          ),
                         if (state.semDosesAgendadas)
                           const _EstadoSemDosesCard()
                         else
@@ -84,6 +93,84 @@ class _DosesView extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _BannerEstoqueBaixo extends StatelessWidget {
+  const _BannerEstoqueBaixo({
+    super.key,
+    required this.alerta,
+    this.medicamentoRepository,
+  });
+
+  final AlertaEstoqueBaixo alerta;
+  final MedicamentoRepository? medicamentoRepository;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      color: Colors.amber.shade100,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.amber.shade400),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          final bloc = context.read<DosesBloc>();
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DetalheMedicamentoPage(
+                medicamento: alerta.medicamento,
+                repository: medicamentoRepository,
+              ),
+            ),
+          );
+          if (context.mounted) {
+            bloc.add(const LoadDosesDia());
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.amber.shade900,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      alerta.medicamento.nome,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: Colors.amber.shade900,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      alerta.mensagem,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.amber.shade900,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

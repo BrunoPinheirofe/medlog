@@ -31,11 +31,11 @@
   - Saldo `estoqueAtual` migrado para `double` (`REAL` no SQLite v4) com coluna `estoque_consumido` em `registros_dose`, garantindo piso `0` na baixa e estorno exato ao desfazer dose agendada, em grupo ou extra/SOS.
   - Exibição formatada em pt-BR (`formatarEstoque`: inteiros sem decimais e frações com vírgula).
 
-### 1.3 — Alerta de estoque baixo
-- **Nota:** O banner da feature `001-low-stock-alert` consumirá o saldo fracionário (`double`) resultante do item 1.2.
-- **Falta:**
-  - Banner na tela **Hoje**: *"Atenção: Restam apenas X comprimidos. Hora de comprar!"* quando `estoqueAtual <= estoqueMinimo`.
-  - Considerar também `dataFim` do tratamento como gatilho de "repor".
+### 1.3 — Alerta de estoque baixo ✅ Concluído (`001-low-stock-alert`)
+- **Status:** Implementado.
+- **Entregue:**
+  - Calculadora pura (`calcularAlertasEstoqueBaixo` e `formatarMensagemEstoqueBaixo` em `estoque_dose_calculator.dart`) avaliando medicamentos ativos no dia por limite mínimo (`estoqueAtual <= estoqueMinimo`) e por cobertura restante até `dataFim` em tratamentos temporários (`estoqueAtual < dosesRestantes * quantidadeConsumidaPorDose`), ordenados pela menor folga.
+  - Banners acolhedores (`_BannerEstoqueBaixo`) no topo da tela **Hoje** (`doses_page.dart`) exibindo `"Atenção: Restam apenas X [unidade]. Hora de comprar!"` (com singular automático para `1`), atualizados reativamente ao tomar/estornar doses ou repor o estoque.
 
 ---
 

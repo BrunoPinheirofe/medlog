@@ -284,4 +284,172 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Amoxicilina'), findsNothing);
   });
+
+  testWidgets(
+      'US1: exibe banner de estoque baixo quando estoqueAtual <= estoqueMinimo e dispara ao tomar dose',
+      (tester) async {
+    const medNoLimite = Medicamento(
+      id: 'med-lim',
+      nome: 'Atenolol',
+      forma: FormaMedicamento.comprimido,
+      frequencia: Frequencia.umaVez,
+      horarios: [TimeOfDay(hour: 8, minute: 0)],
+      estoqueAtual: 6, // Inicialmente acima do mínimo (5)
+      estoqueMinimo: 5,
+    );
+
+    final medRepo = FakeMedicamentoRepository()
+      ..store[medNoLimite.id] = medNoLimite;
+    final doseRepo = FakeDoseRepository(medRepo);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DosesPage(
+            medicamentoRepository: medRepo,
+            doseRepository: doseRepo,
+            dataInicial: DateTime(2026, 10, 19),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Com estoque 6 e mínimo 5, nenhum banner é exibido
+    expect(find.byKey(const ValueKey('banner_estoque_baixo_med-lim')), findsNothing);
+
+    // Marca a dose de 08:00 como tomada -> estoque cai de 6 para 5 (igual ao mínimo)
+    await tester.tap(find.text('Atenolol'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('banner_estoque_baixo_med-lim')), findsOneWidget);
+    expect(
+      find.text('Atenção: Restam apenas 5 comprimidos. Hora de comprar!'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'US2: exibe banner para tratamento temporário quando estoque não cobre doses restantes até dataFim',
+      (tester) async {
+    final medTemporario = Medicamento(
+      id: 'med-temp-curto',
+      nome: 'Cefalexina',
+      forma: FormaMedicamento.capsula,
+      usoContinuo: false,
+      duracaoDias: 3, // 3 dias * 2 doses/dia = 6 cápsulas necessárias
+      dataInicio: DateTime(2026, 10, 19),
+      frequencia: Frequencia.duasVezes,
+      horarios: const [TimeOfDay(hour: 8, minute: 0), TimeOfDay(hour: 20, minute: 0)],
+      estoqueAtual: 4, // > estoqueMinimo (2), mas insuficiente para 6 doses
+      estoqueMinimo: 2,
+    );
+
+    final medRepo = FakeMedicamentoRepository()
+      ..store[medTemporario.id] = medTemporario;
+    final doseRepo = FakeDoseRepository(medRepo);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DosesPage(
+            medicamentoRepository: medRepo,
+            doseRepository: doseRepo,
+            dataInicial: DateTime(2026, 10, 19),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('banner_estoque_baixo_med-temp-curto')),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Atenção: Restam apenas 4 cápsulas. Hora de comprar!'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'US3: ordena múltiplos banners pelo mais urgente e remove o banner após repor o estoque no detalhe',
+      (tester) async {
+    const medMenosUrgente = Medicamento(
+      id: 'med-a',
+      nome: 'Paracetamol',
+      forma: FormaMedicamento.comprimido,
+      frequencia: Frequencia.umaVez,
+      horarios: [TimeOfDay(hour: 9, minute: 0)],
+      estoqueAtual: 4, // folga = 4 - 5 = -1
+      estoqueMinimo: 5,
+    );
+    const medMaisUrgente = Medicamento(
+      id: 'med-b',
+      nome: 'Escitalopram',
+      forma: FormaMedicamento.comprimido,
+      frequencia: Frequencia.umaVez,
+      horarios: [TimeOfDay(hour: 10, minute: 0)],
+      estoqueAtual: 1, // folga = 1 - 5 = -4 (mais urgente)
+      estoqueMinimo: 5,
+    );
+
+    final medRepo = FakeMedicamentoRepository()
+      ..store[medMenosUrgente.id] = medMenosUrgente
+      ..store[medMaisUrgente.id] = medMaisUrgente;
+    final doseRepo = FakeDoseRepository(medRepo);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DosesPage(
+            medicamentoRepository: medRepo,
+            doseRepository: doseRepo,
+            dataInicial: DateTime(2026, 10, 19),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final bannerMaisUrgente = find.byKey(const ValueKey('banner_estoque_baixo_med-b'));
+    final bannerMenosUrgente = find.byKey(const ValueKey('banner_estoque_baixo_med-a'));
+    expect(bannerMaisUrgente, findsOneWidget);
+    expect(bannerMenosUrgente, findsOneWidget);
+    expect(
+      find.text('Atenção: Resta apenas 1 comprimido. Hora de comprar!'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Atenção: Restam apenas 4 comprimidos. Hora de comprar!'),
+      findsOneWidget,
+    );
+
+    // Verifica que o mais urgente (med-b) é renderizado acima do menos urgente (med-a)
+    expect(
+      tester.getTopLeft(bannerMaisUrgente).dy,
+      lessThan(tester.getTopLeft(bannerMenosUrgente).dy),
+    );
+
+    // Toca no banner de Escitalopram para abrir DetalheMedicamentoPage e repor estoque (+30 un.)
+    await tester.tap(bannerMaisUrgente);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('btn_editar_rapido_estoque')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('+30 un.'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+
+    // Volta para a tela Hoje
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    // O banner de Escitalopram (agora com 31 comprimidos) desapareceu sem reiniciar o app
+    expect(bannerMaisUrgente, findsNothing);
+    expect(bannerMenosUrgente, findsOneWidget);
+  });
 }
